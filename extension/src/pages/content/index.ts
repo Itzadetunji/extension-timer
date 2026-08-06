@@ -8,12 +8,25 @@ const MESSAGE = {
 	UNBLOCK_SITE: "UNBLOCK_SITE",
 } as const;
 
+function isExtensionContextValid() {
+	try {
+		return Boolean(chrome?.runtime?.id);
+	} catch {
+		return false;
+	}
+}
+
 function showBlockOverlay(siteName: string) {
 	if (document.getElementById(OVERLAY_ID)) {
 		return;
 	}
 
 	const mountTarget = document.body ?? document.documentElement;
+
+	if (!mountTarget) {
+		return;
+	}
+
 	const overlay = document.createElement("div");
 	overlay.id = OVERLAY_ID;
 	overlay.setAttribute("role", "dialog");
@@ -61,62 +74,52 @@ function hideBlockOverlay() {
 }
 
 function requestBlockState() {
-	if (!chrome?.runtime?.sendMessage) {
+	if (!isExtensionContextValid()) {
+		hideBlockOverlay();
 		return;
 	}
 
-	chrome.runtime.sendMessage(
-		{ type: MESSAGE.GET_TAB_BLOCK_STATE },
-		(response) => {
-			if (chrome.runtime.lastError) {
-				return;
-			}
+	try {
+		chrome.runtime.sendMessage(
+			{ type: MESSAGE.GET_TAB_BLOCK_STATE },
+			(response) => {
+				if (chrome.runtime.lastError) {
+					return;
+				}
 
-			if (response?.blocked && response.siteName) {
-				showBlockOverlay(response.siteName);
-				return;
-			}
+				if (response?.blocked && response.siteName) {
+					showBlockOverlay(response.siteName);
+					return;
+				}
 
-			hideBlockOverlay();
-		},
-	);
-}
-
-function ensureOverlayStyles() {
-	if (document.getElementById("extension-timer-block-overlay-styles")) {
-		return;
-	}
-
-	const style = document.createElement("style");
-	style.id = "extension-timer-block-overlay-styles";
-	style.textContent = `
-		#${OVERLAY_ID} {
-			position: fixed !important;
-			inset: 0 !important;
-			z-index: ${OVERLAY_Z_INDEX} !important;
-			background: #000000 !important;
-			color: #ffffff !important;
-		}
-	`;
-	document.documentElement.appendChild(style);
-}
-
-chrome.runtime.onMessage.addListener((message) => {
-	if (message?.type === MESSAGE.BLOCK_SITE && message.siteName) {
-		ensureOverlayStyles();
-		showBlockOverlay(message.siteName);
-		return;
-	}
-
-	if (message?.type === MESSAGE.UNBLOCK_SITE) {
+				hideBlockOverlay();
+			},
+		);
+	} catch {
 		hideBlockOverlay();
 	}
-});
+}
 
 function initBlockOverlay() {
-	ensureOverlayStyles();
+	if (!isExtensionContextValid()) {
+		return;
+	}
+
 	requestBlockState();
 	window.setInterval(requestBlockState, POLL_INTERVAL_MS);
+}
+
+if (isExtensionContextValid()) {
+	chrome.runtime.onMessage.addListener((message) => {
+		if (message?.type === MESSAGE.BLOCK_SITE && message.siteName) {
+			showBlockOverlay(message.siteName);
+			return;
+		}
+
+		if (message?.type === MESSAGE.UNBLOCK_SITE) {
+			hideBlockOverlay();
+		}
+	});
 }
 
 if (document.readyState === "loading") {

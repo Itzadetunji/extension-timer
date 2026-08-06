@@ -3,6 +3,7 @@ import {
 	TRACKER_ALARM_NAME,
 	TRACKER_TICK_INTERVAL_MS,
 } from "@/lib/tracker/constants";
+import { buildLiveTrackerSnapshot } from "@/lib/tracker/live-tracker-state";
 import { findTrackedSiteByUrl } from "@/lib/tracker/match-tracked-site";
 import {
 	type TabBlockStateResponse,
@@ -235,8 +236,8 @@ async function syncActiveTab() {
 }
 
 async function handleTrackerTick() {
-	await flushActiveTracking();
 	await syncActiveTab();
+	await notifyAllTrackedTabs();
 	scheduleNextTick();
 }
 
@@ -326,11 +327,21 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	if (message?.type === TRACKER_MESSAGE.GET_RUNTIME) {
-		const response: TrackerRuntimeResponse = {
-			trackingSiteId: runtimeState.trackingSiteId,
-			trackingStartedAt: runtimeState.trackingStartedAt,
-		};
-		sendResponse(response);
+		void (async () => {
+			const persisted = await loadPersistedTrackerState();
+			const snapshot = buildLiveTrackerSnapshot(
+				persisted?.sites ?? [],
+				runtimeState,
+			);
+
+			const response: TrackerRuntimeResponse = {
+				trackingSiteId: snapshot.trackingSiteId,
+				liveUsedSecondsBySiteId: snapshot.liveUsedSecondsBySiteId,
+				computedAt: snapshot.computedAt,
+			};
+			sendResponse(response);
+		})();
+
 		return true;
 	}
 

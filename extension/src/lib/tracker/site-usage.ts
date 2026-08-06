@@ -47,13 +47,17 @@ export function getLiveUsedSecondsToday(
 		today?: string;
 		trackingSiteId?: SiteId | null;
 		trackingStartedAt?: number | null;
+		usedSecondsTodayBySiteId?: Record<string, number>;
 	} = {},
 ) {
 	const today = options.today ?? formatUsageDay();
 	const normalized = normalizeSiteForToday(site, today);
+	const usedSecondsToday =
+		options.usedSecondsTodayBySiteId?.[normalized.id] ??
+		normalized.usedSecondsToday;
 	const sessionElapsed = getSessionElapsedSeconds(normalized.id, options);
 
-	return normalized.usedSecondsToday + sessionElapsed;
+	return usedSecondsToday + sessionElapsed;
 }
 
 export function buildLiveUsedSecondsMap(
@@ -63,6 +67,7 @@ export function buildLiveUsedSecondsMap(
 		today?: string;
 		trackingSiteId?: SiteId | null;
 		trackingStartedAt?: number | null;
+		usedSecondsTodayBySiteId?: Record<string, number>;
 	} = {},
 ) {
 	return Object.fromEntries(
