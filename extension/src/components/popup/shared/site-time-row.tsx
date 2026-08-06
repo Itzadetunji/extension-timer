@@ -1,6 +1,6 @@
 import {
 	InfoTooltip,
-	TIME_SPENT_TODAY_TOOLTIP,
+	TIME_SPENT_PER_APP_TOOLTIP,
 } from "@/components/popup/shared/info-tooltip";
 import { SiteIcon } from "@/components/popup/shared/site-icon";
 import { Separator } from "@/components/ui/separator";
@@ -58,7 +58,7 @@ export function SiteTimeList({
 				</h2>
 				<InfoTooltip
 					label="Time spent today"
-					content={TIME_SPENT_TODAY_TOOLTIP}
+					content={TIME_SPENT_PER_APP_TOOLTIP}
 				/>
 			</div>
 			<div>

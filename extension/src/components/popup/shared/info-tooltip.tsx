@@ -30,5 +30,8 @@ export function InfoTooltip({ label, content }: InfoTooltipProps) {
 export const TIME_SPENT_TODAY_TOOLTIP =
 	"Time spent on this site today. Resets at midnight.";
 
+export const TIME_SPENT_PER_APP_TOOLTIP =
+	"Times spent on each website today";
+
 export const TOTAL_TIME_ALLOWED_TOOLTIP =
 	"Total time allowed per day for this site. Browsing stops when today's usage reaches this limit.";
