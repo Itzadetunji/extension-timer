@@ -2,6 +2,7 @@ import {
 	TRACKER_ALARM_NAME,
 	TRACKER_TICK_INTERVAL_MS,
 } from "@/lib/tracker/constants";
+import { injectBlockOverlay } from "@/lib/tracker/block-overlay";
 import { findTrackedSiteByUrl } from "@/lib/tracker/match-tracked-site";
 import {
 	type TabBlockStateResponse,
@@ -33,12 +34,27 @@ function scheduleNextTick() {
 	});
 }
 
-function shouldTrackSite(site: TrackedSite) {
-	return site.limitConfigured && site.remainingSeconds > 0;
+function getEffectiveRemainingSeconds(site: TrackedSite, now = Date.now()) {
+	if (
+		runtimeState.trackingSiteId !== site.id ||
+		!runtimeState.trackingStartedAt
+	) {
+		return site.remainingSeconds;
+	}
+
+	const elapsedSeconds = Math.floor(
+		(now - runtimeState.trackingStartedAt) / 1000,
+	);
+
+	return Math.max(0, site.remainingSeconds - elapsedSeconds);
 }
 
-function shouldBlockSite(site: TrackedSite) {
-	return site.limitConfigured && site.remainingSeconds <= 0;
+function shouldTrackSite(site: TrackedSite, now = Date.now()) {
+	return site.limitConfigured && getEffectiveRemainingSeconds(site, now) > 0;
+}
+
+function shouldBlockSite(site: TrackedSite, now = Date.now()) {
+	return site.limitConfigured && getEffectiveRemainingSeconds(site, now) <= 0;
 }
 
 async function sendTabMessage<T>(
@@ -57,6 +73,16 @@ async function notifyTabBlock(tabId: number, site: TrackedSite) {
 		type: TRACKER_MESSAGE.BLOCK_SITE,
 		siteName: site.name,
 	});
+
+	try {
+		await chrome.scripting.executeScript({
+			target: { tabId },
+			func: injectBlockOverlay,
+			args: [site.name],
+		});
+	} catch {
+		// Tab may not allow scripting (chrome://, Web Store, etc.)
+	}
 }
 
 async function notifyTabUnblock(tabId: number) {
@@ -191,7 +217,7 @@ async function syncActiveTab() {
 		runtimeState.trackingSiteId = null;
 		runtimeState.trackingStartedAt = null;
 		await saveRuntimeState(runtimeState);
-		await notifyTabBlock(tab.id, site);
+		await notifyTabBlock(tab.id, { ...site, remainingSeconds: 0 });
 		return;
 	}
 

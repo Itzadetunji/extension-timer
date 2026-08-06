@@ -1,28 +1,34 @@
-const OVERLAY_ID = "extension-timer-block-overlay";
-const OVERLAY_Z_INDEX = 50000;
-const POLL_INTERVAL_MS = 3000;
+export const BLOCK_OVERLAY_ID = "extension-timer-block-overlay";
+export const BLOCK_OVERLAY_Z_INDEX = 50000;
 
-const MESSAGE = {
+export const BLOCK_OVERLAY_MESSAGE = {
 	GET_TAB_BLOCK_STATE: "GET_TAB_BLOCK_STATE",
 	BLOCK_SITE: "BLOCK_SITE",
 	UNBLOCK_SITE: "UNBLOCK_SITE",
 } as const;
 
-function showBlockOverlay(siteName: string) {
-	if (document.getElementById(OVERLAY_ID)) {
+/**
+ * Self-contained overlay injection for chrome.scripting.executeScript.
+ * Must not reference module scope — only passed args and globals.
+ */
+export function injectBlockOverlay(siteName: string) {
+	const overlayId = "extension-timer-block-overlay";
+	const zIndex = 50000;
+
+	if (document.getElementById(overlayId)) {
 		return;
 	}
 
 	const mountTarget = document.body ?? document.documentElement;
 	const overlay = document.createElement("div");
-	overlay.id = OVERLAY_ID;
+	overlay.id = overlayId;
 	overlay.setAttribute("role", "dialog");
 	overlay.setAttribute("aria-modal", "true");
 	overlay.setAttribute("aria-label", "Time limit reached");
 
 	overlay.style.setProperty("position", "fixed", "important");
 	overlay.style.setProperty("inset", "0", "important");
-	overlay.style.setProperty("z-index", String(OVERLAY_Z_INDEX), "important");
+	overlay.style.setProperty("z-index", String(zIndex), "important");
 	overlay.style.setProperty("background", "#000000", "important");
 	overlay.style.setProperty("color", "#ffffff", "important");
 	overlay.style.setProperty("display", "flex", "important");
@@ -56,73 +62,6 @@ function showBlockOverlay(siteName: string) {
 	mountTarget.appendChild(overlay);
 }
 
-function hideBlockOverlay() {
-	document.getElementById(OVERLAY_ID)?.remove();
-}
-
-function requestBlockState() {
-	if (!chrome?.runtime?.sendMessage) {
-		return;
-	}
-
-	chrome.runtime.sendMessage(
-		{ type: MESSAGE.GET_TAB_BLOCK_STATE },
-		(response) => {
-			if (chrome.runtime.lastError) {
-				return;
-			}
-
-			if (response?.blocked && response.siteName) {
-				showBlockOverlay(response.siteName);
-				return;
-			}
-
-			hideBlockOverlay();
-		},
-	);
-}
-
-function ensureOverlayStyles() {
-	if (document.getElementById("extension-timer-block-overlay-styles")) {
-		return;
-	}
-
-	const style = document.createElement("style");
-	style.id = "extension-timer-block-overlay-styles";
-	style.textContent = `
-		#${OVERLAY_ID} {
-			position: fixed !important;
-			inset: 0 !important;
-			z-index: ${OVERLAY_Z_INDEX} !important;
-			background: #000000 !important;
-			color: #ffffff !important;
-		}
-	`;
-	document.documentElement.appendChild(style);
-}
-
-chrome.runtime.onMessage.addListener((message) => {
-	if (message?.type === MESSAGE.BLOCK_SITE && message.siteName) {
-		ensureOverlayStyles();
-		showBlockOverlay(message.siteName);
-		return;
-	}
-
-	if (message?.type === MESSAGE.UNBLOCK_SITE) {
-		hideBlockOverlay();
-	}
-});
-
-function initBlockOverlay() {
-	ensureOverlayStyles();
-	requestBlockState();
-	window.setInterval(requestBlockState, POLL_INTERVAL_MS);
-}
-
-if (document.readyState === "loading") {
-	document.addEventListener("DOMContentLoaded", initBlockOverlay, {
-		once: true,
-	});
-} else {
-	initBlockOverlay();
+export function removeBlockOverlay() {
+	document.getElementById("extension-timer-block-overlay")?.remove();
 }

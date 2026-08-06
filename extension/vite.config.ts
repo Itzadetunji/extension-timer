@@ -8,14 +8,15 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 const isUiDev = process.env.UI_DEV === "true";
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
 	return {
 		base: "./",
 		plugins: [
 			react(),
 			tailwindcss(),
 			tsconfigPaths(),
-			!isUiDev &&
+			mode === "development" &&
+				!isUiDev &&
 				hotReloadExtension({
 					log: true,
 					backgroundPath: "src/pages/background/index.ts",
