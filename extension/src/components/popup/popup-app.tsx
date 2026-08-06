@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { AddSiteDialog } from "@/components/popup/add-site/add-site-dialog";
 import { DeleteSiteDialog } from "@/components/popup/delete-site/delete-site-dialog";
@@ -45,11 +45,6 @@ export function PopupApp() {
 	const usedSecondsBySiteId = useLiveUsedSecondsToday(sites);
 	useTrackerStorageSync();
 	useActiveSiteSync(sites, setActiveSiteId);
-
-	const pendingChanges = useMemo(
-		() => selectPendingChanges(sites, draftAllowedSeconds),
-		[draftAllowedSeconds, sites],
-	);
 
 	const handleDraftChange = (siteId: string, seconds: number) => {
 		setDraftAllowedSeconds((current) => ({
@@ -101,8 +96,10 @@ export function PopupApp() {
 		setSiteIdPendingDelete(null);
 	};
 
-	const handleSubmitUpdate = () => {
-		if (pendingChanges.length === 0) {
+	const handleSubmitUpdate = (nextDraftAllowedSeconds: Record<string, number>) => {
+		const nextPendingChanges = selectPendingChanges(sites, nextDraftAllowedSeconds);
+
+		if (nextPendingChanges.length === 0) {
 			setDoneMessage(
 				"No time changes were made. Adjust at least one site limit.",
 			);

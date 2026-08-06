@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useForm } from "@tanstack/react-form";
 import {
 	InfoTooltip,
 	TOTAL_TIME_ALLOWED_TOOLTIP,
@@ -16,7 +18,7 @@ interface UpdateTimesScreenProps {
 	onDraftChange: (siteId: string, seconds: number) => void;
 	onDeleteSite: (siteId: string) => void;
 	onBack: () => void;
-	onSubmit: () => void;
+	onSubmit: (draftAllowedSeconds: Record<string, number>) => void;
 	onAddSite: () => void;
 }
 
@@ -33,8 +35,31 @@ export function UpdateTimesScreen({
 	onSubmit,
 	onAddSite,
 }: UpdateTimesScreenProps) {
+	const form = useForm({
+		defaultValues: {
+			draftAllowedSeconds,
+		},
+		onSubmit: ({ value }) => {
+			onSubmit(value.draftAllowedSeconds);
+		},
+	});
+
+	useEffect(() => {
+		form.setFieldValue("draftAllowedSeconds", draftAllowedSeconds, {
+
+			dontUpdateMeta: true
+		});
+	}, [draftAllowedSeconds, form]);
+
 	return (
-		<div className="flex min-h-full flex-col gap-6">
+		<form
+			className="flex min-h-full flex-col gap-6"
+			onSubmit={(event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				void form.handleSubmit();
+			}}
+		>
 			<PopupHeader
 				subtitle="Update Times"
 				showBack
@@ -64,10 +89,7 @@ export function UpdateTimesScreen({
 					<div key={site.id}>
 						<div className="flex items-center justify-between gap-4 py-3">
 							<div className="flex min-w-0 items-center gap-3">
-								<SiteIcon
-									siteId={site.id}
-									size="sm"
-								/>
+								<SiteIcon siteId={site.id} size="sm" />
 								<span className="truncate text-sm font-medium">
 									{site.name}
 								</span>
@@ -82,10 +104,12 @@ export function UpdateTimesScreen({
 									)}
 									onChange={(event) => {
 										const minutes = Number.parseInt(event.target.value, 10);
-										onDraftChange(
-											site.id,
-											(Number.isNaN(minutes) ? 0 : minutes) * 60,
-										);
+										const nextSeconds = (Number.isNaN(minutes) ? 0 : minutes) * 60;
+										onDraftChange(site.id, nextSeconds);
+										form.setFieldValue("draftAllowedSeconds", {
+											...form.state.values.draftAllowedSeconds,
+											[site.id]: nextSeconds,
+										});
 									}}
 									className="h-9 w-12 border border-input px-2 text-center tabular-nums"
 									aria-label={`${site.name} daily limit in minutes`}
@@ -93,8 +117,8 @@ export function UpdateTimesScreen({
 								<Button
 									type="button"
 									variant="destructive"
-									size="xs"
 									onClick={() => onDeleteSite(site.id)}
+									className="self-stretch px-4"
 								>
 									<TrashIcon />
 								</Button>
@@ -105,15 +129,17 @@ export function UpdateTimesScreen({
 				))}
 			</section>
 
-			<div className="mt-auto pt-2">
-				<Button
-					type="button"
-					className="w-full"
-					onClick={onSubmit}
-				>
-					Update
-				</Button>
-			</div>
-		</div>
+			<form.Subscribe selector={(state) => state.isDirty}>
+				{(isDirty) =>
+					isDirty ? (
+						<div className="mt-auto pt-2">
+							<Button type="submit" className="w-full">
+								Update
+							</Button>
+						</div>
+					) : null
+				}
+			</form.Subscribe>
+		</form>
 	);
 }
