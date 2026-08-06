@@ -8,6 +8,7 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 
 export default defineConfig(() => {
 	return {
+		base: "./",
 		plugins: [
 			react(),
 			tailwindcss(),
