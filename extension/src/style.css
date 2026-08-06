@@ -40,6 +40,9 @@
   html {
     @apply font-sans;
 	}
+  .popup-root {
+    @apply w-[380px] min-h-[520px] p-5;
+	}
 }
 
 * {
