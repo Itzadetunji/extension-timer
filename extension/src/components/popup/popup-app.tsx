@@ -6,65 +6,30 @@ import { ReasonDialog } from "@/components/popup/reason-dialog";
 import { UpdateLogsScreen } from "@/components/popup/update-logs-screen";
 import { UpdateTimesScreen } from "@/components/popup/update-times-screen";
 import {
-	ACTIVE_SITE_ID,
-	INITIAL_SITES,
-	INITIAL_UPDATE_LOGS,
-} from "@/lib/mock-data";
-import type {
-	Screen,
-	SiteTimeChange,
-	TrackedSite,
-	UpdateLogEntry,
-} from "@/types/tracker";
-
-function buildDraftMinutes(sites: TrackedSite[]) {
-	return Object.fromEntries(
-		sites.map((site) => [site.id, site.minutesRemaining]),
-	);
-}
-
-function formatToday() {
-	const now = new Date();
-	const day = String(now.getDate()).padStart(2, "0");
-	const month = String(now.getMonth() + 1).padStart(2, "0");
-	const year = now.getFullYear();
-
-	return `${day}/${month}/${year}`;
-}
+	buildDraftMinutes,
+	selectPendingChanges,
+	useTrackerStore,
+} from "@/stores/tracker-store";
+import type { Screen } from "@/types/tracker";
 
 export function PopupApp() {
 	const [screen, setScreen] = useState<Screen>("home");
-	const [sites, setSites] = useState<TrackedSite[]>(INITIAL_SITES);
-	const [updateLogs, setUpdateLogs] =
-		useState<UpdateLogEntry[]>(INITIAL_UPDATE_LOGS);
-	const [draftMinutes, setDraftMinutes] = useState<Record<string, number>>(() =>
-		buildDraftMinutes(INITIAL_SITES),
-	);
+	const [draftMinutes, setDraftMinutes] = useState<Record<string, number>>({});
 	const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
 	const [doneDialogOpen, setDoneDialogOpen] = useState(false);
 	const [reason, setReason] = useState("");
 	const [doneMessage, setDoneMessage] = useState("");
 
-	const pendingChanges = useMemo(() => {
-		return sites.flatMap((site) => {
-			const nextMinutes = draftMinutes[site.id] ?? site.minutesRemaining;
-			const addedMinutes = nextMinutes - site.minutesRemaining;
+	const sites = useTrackerStore((state) => state.sites);
+	const updateLogs = useTrackerStore((state) => state.updateLogs);
+	const activeSiteId = useTrackerStore((state) => state.activeSiteId);
+	const hasHydrated = useTrackerStore((state) => state.hasHydrated);
+	const applyTimeUpdate = useTrackerStore((state) => state.applyTimeUpdate);
 
-			if (addedMinutes <= 0) {
-				return [];
-			}
-
-			return [
-				{
-					siteId: site.id,
-					siteName: site.name,
-					previousMinutes: site.minutesRemaining,
-					newMinutes: nextMinutes,
-					addedMinutes,
-				} satisfies SiteTimeChange,
-			];
-		});
-	}, [draftMinutes, sites]);
+	const pendingChanges = useMemo(
+		() => selectPendingChanges(sites, draftMinutes),
+		[draftMinutes, sites],
+	);
 
 	const handleDraftChange = (siteId: string, minutes: number) => {
 		setDraftMinutes((current) => ({
@@ -97,43 +62,40 @@ export function PopupApp() {
 			return;
 		}
 
-		setSites((current) =>
-			current.map((site) => ({
-				...site,
-				minutesRemaining: draftMinutes[site.id] ?? site.minutesRemaining,
-			})),
-		);
+		const changes = applyTimeUpdate(draftMinutes, trimmedReason);
 
-		const totalAdded = pendingChanges.reduce(
+		if (changes.length === 0) {
+			return;
+		}
+
+		const totalAdded = changes.reduce(
 			(sum, change) => sum + change.addedMinutes,
 			0,
 		);
 
-		setUpdateLogs((current) => [
-			{
-				id: `log-${Date.now()}`,
-				date: formatToday(),
-				reason: trimmedReason,
-				changes: pendingChanges,
-			},
-			...current,
-		]);
-
 		setReasonDialogOpen(false);
 		setDoneMessage(
-			`Your time limits were updated. ${totalAdded} minute${totalAdded === 1 ? "" : "s"} added across ${pendingChanges.length} site${pendingChanges.length === 1 ? "" : "s"}.`,
+			`Your time limits were updated. ${totalAdded} minute${totalAdded === 1 ? "" : "s"} added across ${changes.length} site${changes.length === 1 ? "" : "s"}.`,
 		);
 		setDoneDialogOpen(true);
 		setScreen("home");
 		setReason("");
 	};
 
+	if (!hasHydrated) {
+		return (
+			<div className="flex min-h-[520px] items-center justify-center text-sm text-muted-foreground">
+				Loading tracker...
+			</div>
+		);
+	}
+
 	return (
 		<>
 			{screen === "home" && (
 				<HomeScreen
 					sites={sites}
-					activeSiteId={ACTIVE_SITE_ID}
+					activeSiteId={activeSiteId}
 					onUpdateTimes={handleOpenUpdateFlow}
 					onViewLogs={() => setScreen("update-logs")}
 				/>
