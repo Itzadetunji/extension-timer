@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import tsconfigPaths from "vite-tsconfig-paths";
 import hotReloadExtension from "hot-reload-extension-vite";
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
@@ -10,6 +11,7 @@ export default defineConfig(() => {
 		plugins: [
 			react(),
 			tailwindcss(),
+			tsconfigPaths(),
 			hotReloadExtension({
 				log: true,
 				backgroundPath: "src/pages/background/index.ts",
