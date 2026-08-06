@@ -8,7 +8,7 @@
 		"dev:ui": "UI_DEV=true vite",
 		"build": "tsc -b && NODE_ENV=development vite build --watch ",
 		"preview": "vite preview",
-		"format": "biome format",
+		"format": "biome format --write",
 		"lint": "biome lint --unsafe",
 		"check": "biome check"
 	},

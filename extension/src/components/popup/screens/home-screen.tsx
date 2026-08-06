@@ -8,6 +8,7 @@ import { SiteTimeList } from "@/components/popup/shared/site-time-row";
 import { Button } from "@/components/ui/button";
 import { formatRemainingSeconds } from "@/lib/tracker/format-time";
 import type { SiteId, TrackedSite } from "@/types/tracker";
+import { MadeWith } from "../shared/made-with";
 
 interface HomeScreenProps {
 	sites: TrackedSite[];
@@ -28,7 +29,7 @@ export function HomeScreen({
 	const activeUsedSeconds = usedSecondsBySiteId[activeSite.id] ?? 0;
 
 	return (
-		<div className="flex min-h-full flex-col gap-6">
+		<div className="flex min-h-full flex-col gap-6 justify-between flex-1">
 			<PopupHeader
 				action={
 					<Button
@@ -59,12 +60,16 @@ export function HomeScreen({
 				</div>
 			</section>
 
-			<SiteTimeList sites={sites} usedSecondsBySiteId={usedSecondsBySiteId} />
+			<div className="flex flex-col flex-1 gap-1 justify-between">
+				<SiteTimeList sites={sites} usedSecondsBySiteId={usedSecondsBySiteId} />
 
-			<div className="mt-auto pt-2">
-				<Button type="button" className="w-full" onClick={onUpdateTimes}>
-					Update Times
-				</Button>
+				<div className="pt-2">
+					<Button type="button" className="w-full" onClick={onUpdateTimes}>
+						Update Times
+					</Button>
+				</div>
+
+				<MadeWith />
 			</div>
 		</div>
 	);

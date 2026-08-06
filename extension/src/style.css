@@ -42,7 +42,7 @@
 		@apply bg-background font-sans;
 	}
 	.popup-root {
-		@apply w-[380px] min-h-[520px] bg-background p-5;
+		@apply w-[380px] min-h-[520px] bg-background p-5 flex flex-col;
 	}
 }
 
