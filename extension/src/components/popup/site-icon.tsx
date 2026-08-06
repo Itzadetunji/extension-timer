@@ -1,18 +1,44 @@
+import type React from "react";
+import { InstagramIcon } from "@/components/svg-icons/instagram-icon";
+import { LinkedinIcon } from "@/components/svg-icons/linkedin-icon";
+import { TiktokIcon } from "@/components/svg-icons/tiktok-icon";
+import { XIcon } from "@/components/svg-icons/x-icon";
+import { YoutubeIcon } from "@/components/svg-icons/youtube-icon";
 import { cn } from "@/lib/utils";
 import type { SiteId } from "@/types/tracker";
 
-const SITE_STYLES: Record<SiteId, { label: string; className: string }> = {
+const SITE_ICONS: Record<
+	SiteId,
+	{
+		Icon: React.FC<React.SVGProps<SVGSVGElement>>;
+		color: string;
+		label: string;
+	}
+> = {
 	youtube: {
-		label: "YT",
-		className: "bg-red-600 text-white",
+		Icon: YoutubeIcon,
+		color: "#FF0000",
+		label: "YouTube",
 	},
 	tiktok: {
-		label: "TT",
-		className: "bg-neutral-900 text-white",
+		Icon: TiktokIcon,
+		color: "#FFF",
+		label: "TikTok",
 	},
-	facebook: {
-		label: "FB",
-		className: "bg-blue-600 text-white",
+	instagram: {
+		Icon: InstagramIcon,
+		color: "#E4405F",
+		label: "Instagram",
+	},
+	x: {
+		Icon: XIcon,
+		color: "#FFFFFF",
+		label: "X",
+	},
+	linkedin: {
+		Icon: LinkedinIcon,
+		color: "#0A66C2",
+		label: "LinkedIn",
 	},
 };
 
@@ -23,25 +49,20 @@ interface SiteIconProps {
 }
 
 const SIZE_CLASSES = {
-	sm: "size-7 text-[0.625rem]",
-	md: "size-9 text-xs",
-	lg: "size-12 text-sm",
+	sm: "size-5",
+	md: "size-6",
+	lg: "size-10",
 };
 
 export function SiteIcon({ siteId, size = "md", className }: SiteIconProps) {
-	const site = SITE_STYLES[siteId];
+	const site = SITE_ICONS[siteId];
+	const Icon = site.Icon;
 
 	return (
-		<div
-			className={cn(
-				"flex shrink-0 items-center justify-center rounded-full font-semibold tracking-wide",
-				site.className,
-				SIZE_CLASSES[size],
-				className,
-			)}
-			aria-hidden
-		>
-			{site.label}
-		</div>
+		<Icon
+			aria-label={site.label}
+			className={cn("shrink-0", SIZE_CLASSES[size], className)}
+			fill={site.color}
+		/>
 	);
 }

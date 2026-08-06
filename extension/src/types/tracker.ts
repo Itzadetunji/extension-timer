@@ -1,4 +1,4 @@
-export type SiteId = "youtube" | "tiktok" | "facebook";
+export type SiteId = "youtube" | "tiktok" | "instagram" | "x" | "linkedin";
 
 export interface TrackedSite {
 	id: SiteId;

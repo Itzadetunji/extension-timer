@@ -3,7 +3,7 @@ import type { TrackedSite, UpdateLogEntry } from "@/types/tracker";
 export const INITIAL_SITES: TrackedSite[] = [
 	{ id: "youtube", name: "Youtube", minutesRemaining: 16 },
 	{ id: "tiktok", name: "TikTok", minutesRemaining: 15 },
-	{ id: "facebook", name: "Facebook", minutesRemaining: 15 },
+	{ id: "instagram", name: "Instagram", minutesRemaining: 15 },
 ];
 
 export const ACTIVE_SITE_ID = "youtube";
@@ -36,8 +36,8 @@ export const INITIAL_UPDATE_LOGS: UpdateLogEntry[] = [
 		reason: "Needed extra time for a project",
 		changes: [
 			{
-				siteId: "facebook",
-				siteName: "Facebook",
+				siteId: "instagram",
+				siteName: "Instagram",
 				previousMinutes: 5,
 				newMinutes: 20,
 				addedMinutes: 15,
