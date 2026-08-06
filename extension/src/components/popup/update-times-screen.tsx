@@ -22,11 +22,7 @@ export function UpdateTimesScreen({
 }: UpdateTimesScreenProps) {
 	return (
 		<div className="flex min-h-full flex-col gap-6">
-			<PopupHeader
-				subtitle="Update Times"
-				showBack
-				onBack={onBack}
-			/>
+			<PopupHeader subtitle="Update Times" showBack onBack={onBack} />
 
 			<section className="space-y-1">
 				{sites.map((site, index) => (
@@ -46,10 +42,7 @@ export function UpdateTimesScreen({
 									value={draftMinutes[site.id] ?? site.minutesRemaining}
 									onChange={(event) => {
 										const value = Number.parseInt(event.target.value, 10);
-										onDraftChange(
-											site.id,
-											Number.isNaN(value) ? 0 : value,
-										);
+										onDraftChange(site.id, Number.isNaN(value) ? 0 : value);
 									}}
 									className="h-9 w-16 border border-input px-2 text-center tabular-nums"
 									aria-label={`${site.name} minutes`}

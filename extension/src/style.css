@@ -32,17 +32,17 @@
 		--input: 217.2 32.6% 17.5%;
 		--ring: 212.7 26.8% 83.9%;
 	}
-  * {
-    @apply border-border outline-ring/50;
+	* {
+		@apply border-border outline-ring/50;
 	}
-  body {
-    @apply bg-background text-foreground font-sans;
+	body {
+		@apply bg-background text-foreground font-sans;
 	}
-  html {
-    @apply bg-background font-sans;
+	html {
+		@apply bg-background font-sans;
 	}
-  .popup-root {
-    @apply w-[380px] min-h-[520px] bg-background p-5;
+	.popup-root {
+		@apply w-[380px] min-h-[520px] bg-background p-5;
 	}
 }
 

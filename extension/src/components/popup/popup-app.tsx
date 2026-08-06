@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+
 import { DoneDialog } from "@/components/popup/done-dialog";
 import { HomeScreen } from "@/components/popup/home-screen";
 import { ReasonDialog } from "@/components/popup/reason-dialog";
@@ -36,8 +37,8 @@ export function PopupApp() {
 	const [sites, setSites] = useState<TrackedSite[]>(INITIAL_SITES);
 	const [updateLogs, setUpdateLogs] =
 		useState<UpdateLogEntry[]>(INITIAL_UPDATE_LOGS);
-	const [draftMinutes, setDraftMinutes] = useState<Record<string, number>>(
-		() => buildDraftMinutes(INITIAL_SITES),
+	const [draftMinutes, setDraftMinutes] = useState<Record<string, number>>(() =>
+		buildDraftMinutes(INITIAL_SITES),
 	);
 	const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
 	const [doneDialogOpen, setDoneDialogOpen] = useState(false);
@@ -79,7 +80,9 @@ export function PopupApp() {
 
 	const handleSubmitUpdate = () => {
 		if (pendingChanges.length === 0) {
-			setDoneMessage("No time was added. Increase at least one site limit to update.");
+			setDoneMessage(
+				"No time was added. Increase at least one site limit to update.",
+			);
 			setDoneDialogOpen(true);
 			return;
 		}
@@ -147,10 +150,7 @@ export function PopupApp() {
 			)}
 
 			{screen === "update-logs" && (
-				<UpdateLogsScreen
-					logs={updateLogs}
-					onBack={() => setScreen("home")}
-				/>
+				<UpdateLogsScreen logs={updateLogs} onBack={() => setScreen("home")} />
 			)}
 
 			<ReasonDialog

@@ -2,8 +2,7 @@ import { PopupHeader } from "@/components/popup/popup-header";
 import { SiteIcon } from "@/components/popup/site-icon";
 import { SiteTimeList } from "@/components/popup/site-time-row";
 import { Button } from "@/components/ui/button";
-import type { TrackedSite } from "@/types/tracker";
-import type { SiteId } from "@/types/tracker";
+import type { SiteId, TrackedSite } from "@/types/tracker";
 
 interface HomeScreenProps {
 	sites: TrackedSite[];
@@ -43,17 +42,15 @@ export function HomeScreen({
 					<SiteIcon siteId={activeSite.id} size="lg" />
 					<span className="text-sm font-medium">{activeSite.name}</span>
 				</div>
-				<p className="text-xs text-muted-foreground">Time remaining on this site</p>
+				<p className="text-xs text-muted-foreground">
+					Time remaining on this site
+				</p>
 			</section>
 
 			<SiteTimeList sites={sites} />
 
 			<div className="mt-auto pt-2">
-				<Button
-					type="button"
-					className="w-full"
-					onClick={onUpdateTimes}
-				>
+				<Button type="button" className="w-full" onClick={onUpdateTimes}>
 					Update Times
 				</Button>
 			</div>

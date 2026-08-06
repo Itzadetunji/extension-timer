@@ -47,9 +47,7 @@ export function SiteTimeList({
 				{sites.map((site, index) => (
 					<div key={site.id}>
 						<SiteTimeRow site={site} />
-						{showSeparator && index < sites.length - 1 && (
-							<Separator />
-						)}
+						{showSeparator && index < sites.length - 1 && <Separator />}
 					</div>
 				))}
 			</div>

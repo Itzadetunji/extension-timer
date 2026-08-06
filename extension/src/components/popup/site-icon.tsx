@@ -1,10 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { SiteId } from "@/types/tracker";
 
-const SITE_STYLES: Record<
-	SiteId,
-	{ label: string; className: string }
-> = {
+const SITE_STYLES: Record<SiteId, { label: string; className: string }> = {
 	youtube: {
 		label: "YT",
 		className: "bg-red-600 text-white",
@@ -31,11 +28,7 @@ const SIZE_CLASSES = {
 	lg: "size-12 text-sm",
 };
 
-export function SiteIcon({
-	siteId,
-	size = "md",
-	className,
-}: SiteIconProps) {
+export function SiteIcon({ siteId, size = "md", className }: SiteIconProps) {
 	const site = SITE_STYLES[siteId];
 
 	return (

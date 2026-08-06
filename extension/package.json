@@ -7,7 +7,10 @@
 		"dev": "vite",
 		"dev:ui": "UI_DEV=true vite",
 		"build": "tsc -b && NODE_ENV=development vite build --watch ",
-		"preview": "vite preview"
+		"preview": "vite preview",
+		"format": "biome format",
+		"lint": "biome lint --unsafe",
+		"check": "biome check"
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.7.0",
@@ -19,6 +22,7 @@
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"lucide-react": "^1.28.0",
+		"radix-ui": "^1.6.7",
 		"react": "^19",
 		"react-dom": "^19",
 		"root": "tanstack/react-query",

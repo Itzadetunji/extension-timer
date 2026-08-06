@@ -12,8 +12,8 @@
 		"noEmit": true,
 		"types": ["chrome"],
 		"paths": {
-      "@/*": ["./src/*"]
-    }
+			"@/*": ["./src/*"]
+		}
 	},
 	"include": ["src", "bun-env.d.ts"]
 }

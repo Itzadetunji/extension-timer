@@ -1,11 +1,11 @@
+import { PopupHeader } from "@/components/popup/popup-header";
+import { SiteIcon } from "@/components/popup/site-icon";
 import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
-import { PopupHeader } from "@/components/popup/popup-header";
-import { SiteIcon } from "@/components/popup/site-icon";
 import type { UpdateLogEntry } from "@/types/tracker";
 
 interface UpdateLogsScreenProps {
@@ -20,11 +20,7 @@ function formatAddedMinutes(minutes: number) {
 export function UpdateLogsScreen({ logs, onBack }: UpdateLogsScreenProps) {
 	return (
 		<div className="flex min-h-full flex-col gap-6">
-			<PopupHeader
-				subtitle="View Update Logs"
-				showBack
-				onBack={onBack}
-			/>
+			<PopupHeader subtitle="View Update Logs" showBack onBack={onBack} />
 
 			<section className="space-y-4">
 				{logs.length === 0 ? (
