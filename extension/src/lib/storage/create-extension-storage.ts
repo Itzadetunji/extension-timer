@@ -1,12 +1,5 @@
 import type { StateStorage } from "zustand/middleware";
 
-function isChromeStorageAvailable() {
-	return (
-		typeof chrome !== "undefined" &&
-		typeof chrome.storage?.local?.get === "function"
-	);
-}
-
 const localStorageAdapter: StateStorage = {
 	getItem: (name) => {
 		const value = localStorage.getItem(name);
@@ -37,8 +30,24 @@ const chromeStorageAdapter: StateStorage = {
 		}),
 };
 
-export function createExtensionStorage(): StateStorage {
-	return isChromeStorageAvailable()
-		? chromeStorageAdapter
-		: localStorageAdapter;
+function isExtensionContext() {
+	if (typeof window === "undefined") {
+		return false;
+	}
+
+	if (window.location.protocol === "chrome-extension:") {
+		return true;
+	}
+
+	return (
+		typeof chrome !== "undefined" &&
+		typeof chrome.storage?.local?.get === "function" &&
+		Boolean(chrome.runtime?.id)
+	);
 }
+
+export function createExtensionStorage(): StateStorage {
+	return isExtensionContext() ? chromeStorageAdapter : localStorageAdapter;
+}
+
+export { chromeStorageAdapter, localStorageAdapter };
