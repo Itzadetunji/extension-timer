@@ -1,14 +1,16 @@
+import { GlobeIcon } from "lucide-react";
 import type React from "react";
+
 import { InstagramIcon } from "@/components/svg-icons/instagram-icon";
 import { LinkedinIcon } from "@/components/svg-icons/linkedin-icon";
 import { TiktokIcon } from "@/components/svg-icons/tiktok-icon";
 import { XIcon } from "@/components/svg-icons/x-icon";
 import { YoutubeIcon } from "@/components/svg-icons/youtube-icon";
 import { cn } from "@/lib/utils";
-import type { SiteId } from "@/types/tracker";
+import type { KnownSiteId, SiteId } from "@/types/tracker";
 
 const SITE_ICONS: Record<
-	SiteId,
+	KnownSiteId,
 	{
 		Icon: React.FC<React.SVGProps<SVGSVGElement>>;
 		color: string;
@@ -42,6 +44,10 @@ const SITE_ICONS: Record<
 	},
 };
 
+function isKnownSiteId(siteId: SiteId): siteId is KnownSiteId {
+	return siteId in SITE_ICONS;
+}
+
 interface SiteIconProps {
 	siteId: SiteId;
 	size?: "sm" | "md" | "lg";
@@ -55,6 +61,19 @@ const SIZE_CLASSES = {
 };
 
 export function SiteIcon({ siteId, size = "md", className }: SiteIconProps) {
+	if (!isKnownSiteId(siteId)) {
+		return (
+			<GlobeIcon
+				aria-hidden
+				className={cn(
+					"shrink-0 text-muted-foreground",
+					SIZE_CLASSES[size],
+					className,
+				)}
+			/>
+		);
+	}
+
 	const site = SITE_ICONS[siteId];
 	const Icon = site.Icon;
 

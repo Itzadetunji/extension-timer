@@ -1,5 +1,5 @@
-import { PopupHeader } from "@/components/popup/popup-header";
-import { SiteIcon } from "@/components/popup/site-icon";
+import { PopupHeader } from "@/components/popup/shared/popup-header";
+import { SiteIcon } from "@/components/popup/shared/site-icon";
 import {
 	Accordion,
 	AccordionContent,

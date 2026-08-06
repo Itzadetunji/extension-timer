@@ -7,6 +7,10 @@ import {
 	INITIAL_UPDATE_LOGS,
 } from "@/lib/mock-data";
 import { createExtensionStorage } from "@/lib/storage/create-extension-storage";
+import {
+	isDuplicateSite,
+	resolveSiteFromUrl,
+} from "@/lib/sites/resolve-site-from-url";
 import type {
 	SiteId,
 	SiteTimeChange,
@@ -29,6 +33,7 @@ interface TrackerStore extends PersistedTrackerState {
 		reason: string,
 	) => SiteTimeChange[];
 	setActiveSiteId: (siteId: SiteId) => void;
+	addSite: (url: string) => { error: string | null; site: TrackedSite | null };
 	resetTrackerData: () => void;
 }
 
@@ -74,6 +79,30 @@ export const useTrackerStore = create<TrackerStore>()(
 			hasHydrated: false,
 
 			setActiveSiteId: (activeSiteId) => set({ activeSiteId }),
+
+			addSite: (url) => {
+				const site = resolveSiteFromUrl(url);
+
+				if (!site) {
+					return {
+						error: "Enter a valid website URL.",
+						site: null,
+					};
+				}
+
+				const { sites } = get();
+
+				if (isDuplicateSite(sites, site)) {
+					return {
+						error: "This site is already in your list.",
+						site: null,
+					};
+				}
+
+				set({ sites: [...sites, site] });
+
+				return { error: null, site };
+			},
 
 			applyTimeUpdate: (draftMinutes, reason) => {
 				const { sites, updateLogs } = get();

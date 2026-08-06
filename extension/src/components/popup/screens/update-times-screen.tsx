@@ -1,5 +1,5 @@
-import { PopupHeader } from "@/components/popup/popup-header";
-import { SiteIcon } from "@/components/popup/site-icon";
+import { PopupHeader } from "@/components/popup/shared/popup-header";
+import { SiteIcon } from "@/components/popup/shared/site-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -11,6 +11,7 @@ interface UpdateTimesScreenProps {
 	onDraftChange: (siteId: string, minutes: number) => void;
 	onBack: () => void;
 	onSubmit: () => void;
+	onAddSite: () => void;
 }
 
 export function UpdateTimesScreen({
@@ -19,10 +20,20 @@ export function UpdateTimesScreen({
 	onDraftChange,
 	onBack,
 	onSubmit,
+	onAddSite,
 }: UpdateTimesScreenProps) {
 	return (
 		<div className="flex min-h-full flex-col gap-6">
-			<PopupHeader subtitle="Update Times" showBack onBack={onBack} />
+			<PopupHeader
+				subtitle="Update Times"
+				showBack
+				onBack={onBack}
+				action={
+					<Button type="button" variant="outline" size="xs" onClick={onAddSite}>
+						Add
+					</Button>
+				}
+			/>
 
 			<section className="space-y-1">
 				{sites.map((site, index) => (

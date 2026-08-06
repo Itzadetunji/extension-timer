@@ -1,8 +1,16 @@
-export type SiteId = "youtube" | "tiktok" | "instagram" | "x" | "linkedin";
+export type KnownSiteId =
+	| "youtube"
+	| "tiktok"
+	| "instagram"
+	| "x"
+	| "linkedin";
+
+export type SiteId = KnownSiteId | string;
 
 export interface TrackedSite {
 	id: SiteId;
 	name: string;
+	url?: string;
 	minutesRemaining: number;
 }
 
@@ -22,3 +30,5 @@ export interface UpdateLogEntry {
 }
 
 export type Screen = "home" | "update-times" | "update-logs";
+
+export type UrlSource = "current" | "custom";

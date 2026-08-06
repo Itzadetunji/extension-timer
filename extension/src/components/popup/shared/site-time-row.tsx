@@ -1,4 +1,4 @@
-import { SiteIcon } from "@/components/popup/site-icon";
+import { SiteIcon } from "@/components/popup/shared/site-icon";
 import { Separator } from "@/components/ui/separator";
 import type { TrackedSite } from "@/types/tracker";
 

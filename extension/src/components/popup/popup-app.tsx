@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 
-import { DoneDialog } from "@/components/popup/done-dialog";
-import { HomeScreen } from "@/components/popup/home-screen";
-import { ReasonDialog } from "@/components/popup/reason-dialog";
-import { UpdateLogsScreen } from "@/components/popup/update-logs-screen";
-import { UpdateTimesScreen } from "@/components/popup/update-times-screen";
+import { AddSiteDialog } from "@/components/popup/add-site/add-site-dialog";
+import { DoneDialog } from "@/components/popup/done/done-dialog";
+import { ReasonDialog } from "@/components/popup/reason/reason-dialog";
+import { HomeScreen } from "@/components/popup/screens/home-screen";
+import { UpdateLogsScreen } from "@/components/popup/screens/update-logs-screen";
+import { UpdateTimesScreen } from "@/components/popup/screens/update-times-screen";
 import {
 	buildDraftMinutes,
 	selectPendingChanges,
@@ -15,9 +16,9 @@ import type { Screen } from "@/types/tracker";
 export function PopupApp() {
 	const [screen, setScreen] = useState<Screen>("home");
 	const [draftMinutes, setDraftMinutes] = useState<Record<string, number>>({});
+	const [addSiteDialogOpen, setAddSiteDialogOpen] = useState(false);
 	const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
 	const [doneDialogOpen, setDoneDialogOpen] = useState(false);
-	const [reason, setReason] = useState("");
 	const [doneMessage, setDoneMessage] = useState("");
 
 	const sites = useTrackerStore((state) => state.sites);
@@ -25,6 +26,7 @@ export function PopupApp() {
 	const activeSiteId = useTrackerStore((state) => state.activeSiteId);
 	const hasHydrated = useTrackerStore((state) => state.hasHydrated);
 	const applyTimeUpdate = useTrackerStore((state) => state.applyTimeUpdate);
+	const addSite = useTrackerStore((state) => state.addSite);
 
 	const pendingChanges = useMemo(
 		() => selectPendingChanges(sites, draftMinutes),
@@ -43,6 +45,24 @@ export function PopupApp() {
 		setScreen("update-times");
 	};
 
+	const handleAddSite = (url: string) => {
+		const result = addSite(url);
+
+		if (result.error) {
+			return result.error;
+		}
+
+		if (result.site) {
+			const addedSite = result.site;
+			setDraftMinutes((current) => ({
+				...current,
+				[addedSite.id]: addedSite.minutesRemaining,
+			}));
+		}
+
+		return null;
+	};
+
 	const handleSubmitUpdate = () => {
 		if (pendingChanges.length === 0) {
 			setDoneMessage(
@@ -52,17 +72,11 @@ export function PopupApp() {
 			return;
 		}
 
-		setReason("");
 		setReasonDialogOpen(true);
 	};
 
-	const handleConfirmUpdate = () => {
-		const trimmedReason = reason.trim();
-		if (!trimmedReason) {
-			return;
-		}
-
-		const changes = applyTimeUpdate(draftMinutes, trimmedReason);
+	const handleConfirmUpdate = (submittedReason: string) => {
+		const changes = applyTimeUpdate(draftMinutes, submittedReason);
 
 		if (changes.length === 0) {
 			return;
@@ -79,7 +93,6 @@ export function PopupApp() {
 		);
 		setDoneDialogOpen(true);
 		setScreen("home");
-		setReason("");
 	};
 
 	if (!hasHydrated) {
@@ -108,6 +121,7 @@ export function PopupApp() {
 					onDraftChange={handleDraftChange}
 					onBack={() => setScreen("home")}
 					onSubmit={handleSubmitUpdate}
+					onAddSite={() => setAddSiteDialogOpen(true)}
 				/>
 			)}
 
@@ -115,10 +129,14 @@ export function PopupApp() {
 				<UpdateLogsScreen logs={updateLogs} onBack={() => setScreen("home")} />
 			)}
 
+			<AddSiteDialog
+				open={addSiteDialogOpen}
+				onOpenChange={setAddSiteDialogOpen}
+				onAdd={handleAddSite}
+			/>
+
 			<ReasonDialog
 				open={reasonDialogOpen}
-				reason={reason}
-				onReasonChange={setReason}
 				onOpenChange={setReasonDialogOpen}
 				onSubmit={handleConfirmUpdate}
 			/>

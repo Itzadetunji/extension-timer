@@ -1,6 +1,6 @@
-import { PopupHeader } from "@/components/popup/popup-header";
-import { SiteIcon } from "@/components/popup/site-icon";
-import { SiteTimeList } from "@/components/popup/site-time-row";
+import { PopupHeader } from "@/components/popup/shared/popup-header";
+import { SiteIcon } from "@/components/popup/shared/site-icon";
+import { SiteTimeList } from "@/components/popup/shared/site-time-row";
 import { Button } from "@/components/ui/button";
 import type { SiteId, TrackedSite } from "@/types/tracker";
 
