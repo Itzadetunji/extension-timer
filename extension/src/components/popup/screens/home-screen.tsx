@@ -26,7 +26,9 @@ export function HomeScreen({
 	onViewLogs,
 }: HomeScreenProps) {
 	const activeSite = sites.find((site) => site.id === activeSiteId) ?? sites[0];
-	const activeUsedSeconds = usedSecondsBySiteId[activeSite.id] ?? 0;
+	const activeUsedSeconds = activeSite
+		? (usedSecondsBySiteId[activeSite.id] ?? 0)
+		: 0;
 
 	return (
 		<div className="flex min-h-full flex-col gap-6 justify-between flex-1">
@@ -47,10 +49,19 @@ export function HomeScreen({
 				<p className="text-5xl leading-none font-semibold tabular-nums">
 					{formatRemainingSeconds(activeUsedSeconds)}
 				</p>
-				<div className="flex items-center gap-2.5">
-					<SiteIcon siteId={activeSite.id} size="lg" />
-					<span className="text-sm font-medium">{activeSite.name}</span>
-				</div>
+				{activeSite ? (
+					<div className="flex items-center gap-2.5">
+						<SiteIcon
+							siteId={activeSite.id}
+							size="lg"
+						/>
+						<span className="text-sm font-medium">{activeSite.name}</span>
+					</div>
+				) : (
+					<p className="text-sm font-medium text-muted-foreground">
+						No websites are being tracked yet.
+					</p>
+				)}
 				<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 					<span>Time spent today</span>
 					<InfoTooltip
@@ -61,10 +72,17 @@ export function HomeScreen({
 			</section>
 
 			<div className="flex flex-col flex-1 gap-1 justify-between">
-				<SiteTimeList sites={sites} usedSecondsBySiteId={usedSecondsBySiteId} />
+				<SiteTimeList
+					sites={sites}
+					usedSecondsBySiteId={usedSecondsBySiteId}
+				/>
 
 				<div className="pt-2">
-					<Button type="button" className="w-full" onClick={onUpdateTimes}>
+					<Button
+						type="button"
+						className="w-full"
+						onClick={onUpdateTimes}
+					>
 						Update Times
 					</Button>
 				</div>

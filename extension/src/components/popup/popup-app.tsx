@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { AddSiteDialog } from "@/components/popup/add-site/add-site-dialog";
+import { DeleteSiteDialog } from "@/components/popup/delete-site/delete-site-dialog";
 import { DoneDialog } from "@/components/popup/done/done-dialog";
 import { ReasonDialog } from "@/components/popup/reason/reason-dialog";
 import { HomeScreen } from "@/components/popup/screens/home-screen";
@@ -24,6 +25,10 @@ export function PopupApp() {
 		Record<string, number>
 	>({});
 	const [addSiteDialogOpen, setAddSiteDialogOpen] = useState(false);
+	const [deleteSiteDialogOpen, setDeleteSiteDialogOpen] = useState(false);
+	const [siteIdPendingDelete, setSiteIdPendingDelete] = useState<string | null>(
+		null,
+	);
 	const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
 	const [doneDialogOpen, setDoneDialogOpen] = useState(false);
 	const [doneMessage, setDoneMessage] = useState("");
@@ -34,6 +39,7 @@ export function PopupApp() {
 	const hasHydrated = useTrackerStore((state) => state.hasHydrated);
 	const applyTimeUpdate = useTrackerStore((state) => state.applyTimeUpdate);
 	const addSite = useTrackerStore((state) => state.addSite);
+	const deleteSite = useTrackerStore((state) => state.deleteSite);
 	const setActiveSiteId = useTrackerStore((state) => state.setActiveSiteId);
 
 	const usedSecondsBySiteId = useLiveUsedSecondsToday(sites);
@@ -75,6 +81,26 @@ export function PopupApp() {
 		return null;
 	};
 
+	const handleOpenDeleteSite = (siteId: string) => {
+		setSiteIdPendingDelete(siteId);
+		setDeleteSiteDialogOpen(true);
+	};
+
+	const handleConfirmDeleteSite = () => {
+		if (!siteIdPendingDelete) {
+			return;
+		}
+
+		deleteSite(siteIdPendingDelete);
+		setDraftAllowedSeconds((current) => {
+			const next = { ...current };
+			delete next[siteIdPendingDelete];
+			return next;
+		});
+		setDeleteSiteDialogOpen(false);
+		setSiteIdPendingDelete(null);
+	};
+
 	const handleSubmitUpdate = () => {
 		if (pendingChanges.length === 0) {
 			setDoneMessage(
@@ -104,7 +130,7 @@ export function PopupApp() {
 
 	if (!hasHydrated) {
 		return (
-			<div className="flex min-h-[520px] items-center justify-center text-sm text-muted-foreground">
+			<div className="flex min-h-130 items-center justify-center text-sm text-muted-foreground">
 				Loading tracker...
 			</div>
 		);
@@ -127,6 +153,7 @@ export function PopupApp() {
 					sites={sites}
 					draftAllowedSeconds={draftAllowedSeconds}
 					onDraftChange={handleDraftChange}
+					onDeleteSite={handleOpenDeleteSite}
 					onBack={() => setScreen("home")}
 					onSubmit={handleSubmitUpdate}
 					onAddSite={() => setAddSiteDialogOpen(true)}
@@ -134,13 +161,31 @@ export function PopupApp() {
 			)}
 
 			{screen === "update-logs" && (
-				<UpdateLogsScreen logs={updateLogs} onBack={() => setScreen("home")} />
+				<UpdateLogsScreen
+					logs={updateLogs}
+					onBack={() => setScreen("home")}
+				/>
 			)}
 
 			<AddSiteDialog
 				open={addSiteDialogOpen}
 				onOpenChange={setAddSiteDialogOpen}
 				onAdd={handleAddSite}
+			/>
+
+			<DeleteSiteDialog
+				open={deleteSiteDialogOpen}
+				siteName={
+					sites.find((site) => site.id === siteIdPendingDelete)?.name ??
+					"this website"
+				}
+				onOpenChange={(open) => {
+					setDeleteSiteDialogOpen(open);
+					if (!open) {
+						setSiteIdPendingDelete(null);
+					}
+				}}
+				onDelete={handleConfirmDeleteSite}
 			/>
 
 			<ReasonDialog

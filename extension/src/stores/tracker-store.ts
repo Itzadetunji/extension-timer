@@ -36,6 +36,7 @@ interface TrackerStore extends PersistedTrackerState {
 	) => SiteTimeChange[];
 	setActiveSiteId: (siteId: SiteId) => void;
 	addSite: (url: string) => { error: string | null; site: TrackedSite | null };
+	deleteSite: (siteId: SiteId) => void;
 	resetTrackerData: () => void;
 }
 
@@ -99,6 +100,19 @@ export const useTrackerStore = create<TrackerStore>()(
 				set({ sites: [...sites, site] });
 
 				return { error: null, site };
+			},
+
+			deleteSite: (siteId) => {
+				const { sites, activeSiteId } = get();
+				const nextSites = sites.filter((site) => site.id !== siteId);
+
+				set({
+					sites: nextSites,
+					activeSiteId:
+						activeSiteId === siteId
+							? (nextSites[0]?.id ?? activeSiteId)
+							: activeSiteId,
+				});
 			},
 
 			applyTimeUpdate: (draftAllowedSeconds, reason) => {

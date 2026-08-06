@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import type { TrackedSite } from "@/types/tracker";
+import { TrashIcon } from "lucide-react";
 
 interface UpdateTimesScreenProps {
 	sites: TrackedSite[];
 	draftAllowedSeconds: Record<string, number>;
 	onDraftChange: (siteId: string, seconds: number) => void;
+	onDeleteSite: (siteId: string) => void;
 	onBack: () => void;
 	onSubmit: () => void;
 	onAddSite: () => void;
@@ -26,6 +28,7 @@ export function UpdateTimesScreen({
 	sites,
 	draftAllowedSeconds,
 	onDraftChange,
+	onDeleteSite,
 	onBack,
 	onSubmit,
 	onAddSite,
@@ -37,14 +40,19 @@ export function UpdateTimesScreen({
 				showBack
 				onBack={onBack}
 				action={
-					<Button type="button" variant="outline" size="xs" onClick={onAddSite}>
+					<Button
+						type="button"
+						variant="outline"
+						size="xs"
+						onClick={onAddSite}
+					>
 						Add
 					</Button>
 				}
 			/>
 
 			<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-				<span>Total time allowed per day</span>
+				<span>Total time allowed per day (in minutes)</span>
 				<InfoTooltip
 					label="Total time allowed per day"
 					content={TOTAL_TIME_ALLOWED_TOOLTIP}
@@ -56,7 +64,10 @@ export function UpdateTimesScreen({
 					<div key={site.id}>
 						<div className="flex items-center justify-between gap-4 py-3">
 							<div className="flex min-w-0 items-center gap-3">
-								<SiteIcon siteId={site.id} size="sm" />
+								<SiteIcon
+									siteId={site.id}
+									size="sm"
+								/>
 								<span className="truncate text-sm font-medium">
 									{site.name}
 								</span>
@@ -76,10 +87,17 @@ export function UpdateTimesScreen({
 											(Number.isNaN(minutes) ? 0 : minutes) * 60,
 										);
 									}}
-									className="h-9 w-16 border border-input px-2 text-center tabular-nums"
+									className="h-9 w-12 border border-input px-2 text-center tabular-nums"
 									aria-label={`${site.name} daily limit in minutes`}
 								/>
-								<span className="text-xs text-muted-foreground">min(s)</span>
+								<Button
+									type="button"
+									variant="destructive"
+									size="xs"
+									onClick={() => onDeleteSite(site.id)}
+								>
+									<TrashIcon />
+								</Button>
 							</div>
 						</div>
 						{index < sites.length - 1 && <Separator />}
@@ -88,7 +106,11 @@ export function UpdateTimesScreen({
 			</section>
 
 			<div className="mt-auto pt-2">
-				<Button type="button" className="w-full" onClick={onSubmit}>
+				<Button
+					type="button"
+					className="w-full"
+					onClick={onSubmit}
+				>
 					Update
 				</Button>
 			</div>
