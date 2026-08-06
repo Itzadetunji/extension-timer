@@ -1,6 +1,6 @@
 const OVERLAY_ID = "extension-timer-block-overlay";
 const OVERLAY_Z_INDEX = 50000;
-const POLL_INTERVAL_MS = 3000;
+const POLL_INTERVAL_MS = 1000;
 
 const MESSAGE = {
 	GET_TAB_BLOCK_STATE: "GET_TAB_BLOCK_STATE",

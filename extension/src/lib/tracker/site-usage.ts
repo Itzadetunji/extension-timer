@@ -56,8 +56,13 @@ export function getLiveUsedSecondsToday(
 		options.usedSecondsTodayBySiteId?.[normalized.id] ??
 		normalized.usedSecondsToday;
 	const sessionElapsed = getSessionElapsedSeconds(normalized.id, options);
+	const rawUsed = usedSecondsToday + sessionElapsed;
 
-	return usedSecondsToday + sessionElapsed;
+	if (!normalized.limitConfigured) {
+		return rawUsed;
+	}
+
+	return Math.min(rawUsed, normalized.allowedSeconds);
 }
 
 export function buildLiveUsedSecondsMap(

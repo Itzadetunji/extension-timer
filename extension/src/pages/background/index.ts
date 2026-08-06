@@ -114,6 +114,97 @@ async function notifyAllTrackedTabs() {
 	}
 }
 
+async function stopTrackingAtLimit(
+	site: TrackedSite,
+	siteIndex: number,
+	now = Date.now(),
+) {
+	const persisted = await loadPersistedTrackerState();
+
+	if (!persisted) {
+		return;
+	}
+
+	const elapsedSeconds =
+		runtimeState.trackingStartedAt && runtimeState.trackingSiteId === site.id
+			? Math.max(0, Math.floor((now - runtimeState.trackingStartedAt) / 1000))
+			: 0;
+
+	const rawUsed = site.usedSecondsToday + elapsedSeconds;
+	const cappedUsed = site.limitConfigured
+		? Math.min(rawUsed, site.allowedSeconds)
+		: rawUsed;
+
+	const updatedSite: TrackedSite = {
+		...site,
+		usedSecondsToday: cappedUsed,
+		lastUpdatedAt: now,
+	};
+
+	const nextSites = [...persisted.sites];
+	nextSites[siteIndex] = updatedSite;
+
+	await updatePersistedSites(nextSites);
+
+	runtimeState.trackingSiteId = null;
+	runtimeState.trackingStartedAt = null;
+	runtimeState.lastAlarmAt = now;
+	await saveRuntimeState(runtimeState);
+
+	const [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true,
+	});
+
+	if (tab?.id) {
+		await notifyTabBlock(tab.id, site.name);
+	}
+}
+
+async function enforceActiveSiteLimit(now = Date.now()) {
+	const persisted = await loadPersistedTrackerState();
+
+	if (!persisted) {
+		return;
+	}
+
+	if (runtimeState.trackingSiteId && runtimeState.trackingStartedAt) {
+		const siteIndex = persisted.sites.findIndex(
+			(site) => site.id === runtimeState.trackingSiteId,
+		);
+
+		if (siteIndex !== -1) {
+			const site = normalizeSiteForToday(persisted.sites[siteIndex]);
+
+			if (shouldBlockSite(site, runtimeOptions(now))) {
+				await stopTrackingAtLimit(site, siteIndex, now);
+				return;
+			}
+		}
+	}
+
+	const [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true,
+	});
+
+	if (!tab?.id || !tab.url) {
+		return;
+	}
+
+	const matched = findTrackedSiteByUrl(persisted.sites, tab.url);
+
+	if (!matched) {
+		return;
+	}
+
+	const site = normalizeSiteForToday(matched);
+
+	if (shouldBlockSite(site, runtimeOptions(now))) {
+		await notifyTabBlock(tab.id, site.name);
+	}
+}
+
 async function flushActiveTracking(now = Date.now()) {
 	if (!runtimeState.trackingSiteId || !runtimeState.trackingStartedAt) {
 		return null;
@@ -147,7 +238,9 @@ async function flushActiveTracking(now = Date.now()) {
 
 	const updatedSite: TrackedSite = {
 		...site,
-		usedSecondsToday: site.usedSecondsToday + elapsedSeconds,
+		usedSecondsToday: site.limitConfigured
+			? Math.min(site.usedSecondsToday + elapsedSeconds, site.allowedSeconds)
+			: site.usedSecondsToday + elapsedSeconds,
 		lastUpdatedAt: now,
 	};
 
@@ -156,16 +249,30 @@ async function flushActiveTracking(now = Date.now()) {
 
 	await updatePersistedSites(nextSites);
 
+	const hitLimit =
+		site.limitConfigured && updatedSite.usedSecondsToday >= site.allowedSeconds;
+
+	if (hitLimit) {
+		runtimeState.trackingSiteId = null;
+		runtimeState.trackingStartedAt = null;
+		runtimeState.lastAlarmAt = now;
+		await saveRuntimeState(runtimeState);
+
+		const [tab] = await chrome.tabs.query({
+			active: true,
+			currentWindow: true,
+		});
+
+		if (tab?.id) {
+			await notifyTabBlock(tab.id, site.name);
+		}
+
+		return updatedSite;
+	}
+
 	runtimeState.trackingStartedAt = now;
 	runtimeState.lastAlarmAt = now;
 	await saveRuntimeState(runtimeState);
-
-	if (shouldBlockSite(updatedSite, runtimeOptions(now))) {
-		runtimeState.trackingSiteId = null;
-		runtimeState.trackingStartedAt = null;
-		await saveRuntimeState(runtimeState);
-		await notifyAllTrackedTabs();
-	}
 
 	return updatedSite;
 }
@@ -209,11 +316,14 @@ async function syncActiveTab() {
 	await updatePersistedActiveSiteId(site.id);
 
 	if (shouldBlockSite(site, options)) {
-		await flushActiveTracking();
-		runtimeState.trackingSiteId = null;
-		runtimeState.trackingStartedAt = null;
-		await saveRuntimeState(runtimeState);
-		await notifyTabBlock(tab.id, site.name);
+		const siteIndex = persisted.sites.findIndex(
+			(entry) => entry.id === site.id,
+		);
+
+		if (siteIndex !== -1) {
+			await stopTrackingAtLimit(site, siteIndex, Date.now());
+		}
+
 		return;
 	}
 
@@ -236,6 +346,7 @@ async function syncActiveTab() {
 }
 
 async function handleTrackerTick() {
+	await enforceActiveSiteLimit();
 	await syncActiveTab();
 	await notifyAllTrackedTabs();
 	scheduleNextTick();
@@ -244,6 +355,8 @@ async function handleTrackerTick() {
 async function getTabBlockState(
 	tabUrl?: string,
 ): Promise<TabBlockStateResponse> {
+	await enforceActiveSiteLimit();
+
 	if (!tabUrl) {
 		return { blocked: false };
 	}
@@ -328,6 +441,8 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	if (message?.type === TRACKER_MESSAGE.GET_RUNTIME) {
 		void (async () => {
+			await enforceActiveSiteLimit();
+
 			const persisted = await loadPersistedTrackerState();
 			const snapshot = buildLiveTrackerSnapshot(
 				persisted?.sites ?? [],
