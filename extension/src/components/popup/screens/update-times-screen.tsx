@@ -1,3 +1,7 @@
+import {
+	InfoTooltip,
+	TOTAL_TIME_ALLOWED_TOOLTIP,
+} from "@/components/popup/shared/info-tooltip";
 import { PopupHeader } from "@/components/popup/shared/popup-header";
 import { SiteIcon } from "@/components/popup/shared/site-icon";
 import { Button } from "@/components/ui/button";
@@ -7,7 +11,7 @@ import type { TrackedSite } from "@/types/tracker";
 
 interface UpdateTimesScreenProps {
 	sites: TrackedSite[];
-	draftSeconds: Record<string, number>;
+	draftAllowedSeconds: Record<string, number>;
 	onDraftChange: (siteId: string, seconds: number) => void;
 	onBack: () => void;
 	onSubmit: () => void;
@@ -20,7 +24,7 @@ function secondsToMinutesInput(seconds: number) {
 
 export function UpdateTimesScreen({
 	sites,
-	draftSeconds,
+	draftAllowedSeconds,
 	onDraftChange,
 	onBack,
 	onSubmit,
@@ -39,6 +43,14 @@ export function UpdateTimesScreen({
 				}
 			/>
 
+			<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+				<span>Total time allowed per day</span>
+				<InfoTooltip
+					label="Total time allowed per day"
+					content={TOTAL_TIME_ALLOWED_TOOLTIP}
+				/>
+			</div>
+
 			<section className="space-y-1">
 				{sites.map((site, index) => (
 					<div key={site.id}>
@@ -55,7 +67,7 @@ export function UpdateTimesScreen({
 									min={0}
 									inputMode="numeric"
 									value={secondsToMinutesInput(
-										draftSeconds[site.id] ?? site.remainingSeconds,
+										draftAllowedSeconds[site.id] ?? site.allowedSeconds,
 									)}
 									onChange={(event) => {
 										const minutes = Number.parseInt(event.target.value, 10);
@@ -65,7 +77,7 @@ export function UpdateTimesScreen({
 										);
 									}}
 									className="h-9 w-16 border border-input px-2 text-center tabular-nums"
-									aria-label={`${site.name} minutes`}
+									aria-label={`${site.name} daily limit in minutes`}
 								/>
 								<span className="text-xs text-muted-foreground">min(s)</span>
 							</div>

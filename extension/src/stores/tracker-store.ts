@@ -11,6 +11,7 @@ import {
 	resolveSiteFromUrl,
 } from "@/lib/sites/resolve-site-from-url";
 import { createExtensionStorage } from "@/lib/storage/create-extension-storage";
+import { formatUsageDay } from "@/lib/tracker/site-usage";
 import { migratePersistedState } from "@/lib/tracker/tracker-storage";
 import type {
 	SiteId,
@@ -30,7 +31,7 @@ interface PersistedTrackerState {
 interface TrackerStore extends PersistedTrackerState {
 	hasHydrated: boolean;
 	applyTimeUpdate: (
-		draftSeconds: Record<string, number>,
+		draftAllowedSeconds: Record<string, number>,
 		reason: string,
 	) => SiteTimeChange[];
 	setActiveSiteId: (siteId: SiteId) => void;
@@ -39,21 +40,16 @@ interface TrackerStore extends PersistedTrackerState {
 }
 
 function formatToday() {
-	const now = new Date();
-	const day = String(now.getDate()).padStart(2, "0");
-	const month = String(now.getMonth() + 1).padStart(2, "0");
-	const year = now.getFullYear();
-
-	return `${day}/${month}/${year}`;
+	return formatUsageDay();
 }
 
 function buildChanges(
 	sites: TrackedSite[],
-	draftSeconds: Record<string, number>,
+	draftAllowedSeconds: Record<string, number>,
 ): SiteTimeChange[] {
 	return sites.flatMap((site) => {
-		const nextSeconds = draftSeconds[site.id] ?? site.remainingSeconds;
-		const deltaSeconds = nextSeconds - site.remainingSeconds;
+		const nextAllowed = draftAllowedSeconds[site.id] ?? site.allowedSeconds;
+		const deltaSeconds = nextAllowed - site.allowedSeconds;
 
 		if (deltaSeconds === 0) {
 			return [];
@@ -63,8 +59,8 @@ function buildChanges(
 			{
 				siteId: site.id,
 				siteName: site.name,
-				previousSeconds: site.remainingSeconds,
-				newSeconds: nextSeconds,
+				previousSeconds: site.allowedSeconds,
+				newSeconds: nextAllowed,
 				deltaSeconds,
 			},
 		];
@@ -105,26 +101,29 @@ export const useTrackerStore = create<TrackerStore>()(
 				return { error: null, site };
 			},
 
-			applyTimeUpdate: (draftSeconds, reason) => {
+			applyTimeUpdate: (draftAllowedSeconds, reason) => {
 				const { sites, updateLogs } = get();
-				const changes = buildChanges(sites, draftSeconds);
+				const changes = buildChanges(sites, draftAllowedSeconds);
 
 				if (changes.length === 0) {
 					return [];
 				}
 
 				const now = Date.now();
+				const today = formatUsageDay();
 				const updatedSites = sites.map((site) => {
-					const nextSeconds = draftSeconds[site.id] ?? site.remainingSeconds;
+					const nextAllowed =
+						draftAllowedSeconds[site.id] ?? site.allowedSeconds;
 
-					if (nextSeconds === site.remainingSeconds) {
+					if (nextAllowed === site.allowedSeconds) {
 						return site;
 					}
 
 					return {
 						...site,
-						remainingSeconds: nextSeconds,
+						allowedSeconds: nextAllowed,
 						lastUpdatedAt: now,
+						usageDay: site.usageDay || today,
 						limitConfigured: true,
 					};
 				});
@@ -162,7 +161,12 @@ export const useTrackerStore = create<TrackerStore>()(
 			migrate: (persistedState) =>
 				migratePersistedState(
 					persistedState as PersistedTrackerState & {
-						sites: Array<TrackedSite & { minutesRemaining?: number }>;
+						sites: Array<
+							TrackedSite & {
+								minutesRemaining?: number;
+								remainingSeconds?: number;
+							}
+						>;
 						updateLogs: Array<
 							UpdateLogEntry & {
 								changes: Array<
@@ -177,7 +181,7 @@ export const useTrackerStore = create<TrackerStore>()(
 						>;
 					},
 				),
-			version: 1,
+			version: 2,
 		},
 	),
 );
@@ -194,15 +198,18 @@ if (useTrackerStore.persist.hasHydrated()) {
 	useTrackerStore.setState({ hasHydrated: true });
 }
 
-export function buildDraftSeconds(sites: TrackedSite[]) {
+export function buildDraftAllowedSeconds(sites: TrackedSite[]) {
 	return Object.fromEntries(
-		sites.map((site) => [site.id, site.remainingSeconds]),
+		sites.map((site) => [site.id, site.allowedSeconds]),
 	);
 }
 
 export function selectPendingChanges(
 	sites: TrackedSite[],
-	draftSeconds: Record<string, number>,
+	draftAllowedSeconds: Record<string, number>,
 ) {
-	return buildChanges(sites, draftSeconds);
+	return buildChanges(sites, draftAllowedSeconds);
 }
+
+/** @deprecated Use buildDraftAllowedSeconds */
+export const buildDraftSeconds = buildDraftAllowedSeconds;

@@ -1,14 +1,19 @@
+import { injectBlockOverlay } from "@/lib/tracker/block-overlay";
 import {
 	TRACKER_ALARM_NAME,
 	TRACKER_TICK_INTERVAL_MS,
 } from "@/lib/tracker/constants";
-import { injectBlockOverlay } from "@/lib/tracker/block-overlay";
 import { findTrackedSiteByUrl } from "@/lib/tracker/match-tracked-site";
 import {
 	type TabBlockStateResponse,
 	TRACKER_MESSAGE,
 	type TrackerRuntimeResponse,
 } from "@/lib/tracker/messages";
+import {
+	normalizeSiteForToday,
+	shouldBlockSite,
+	shouldTrackSite,
+} from "@/lib/tracker/site-usage";
 import {
 	loadPersistedTrackerState,
 	loadRuntimeState,
@@ -24,6 +29,14 @@ let runtimeState = {
 	lastAlarmAt: Date.now(),
 };
 
+function runtimeOptions(now = Date.now()) {
+	return {
+		now,
+		trackingSiteId: runtimeState.trackingSiteId,
+		trackingStartedAt: runtimeState.trackingStartedAt,
+	};
+}
+
 async function hydrateRuntimeState() {
 	runtimeState = await loadRuntimeState();
 }
@@ -32,29 +45,6 @@ function scheduleNextTick() {
 	chrome.alarms.create(TRACKER_ALARM_NAME, {
 		when: Date.now() + TRACKER_TICK_INTERVAL_MS,
 	});
-}
-
-function getEffectiveRemainingSeconds(site: TrackedSite, now = Date.now()) {
-	if (
-		runtimeState.trackingSiteId !== site.id ||
-		!runtimeState.trackingStartedAt
-	) {
-		return site.remainingSeconds;
-	}
-
-	const elapsedSeconds = Math.floor(
-		(now - runtimeState.trackingStartedAt) / 1000,
-	);
-
-	return Math.max(0, site.remainingSeconds - elapsedSeconds);
-}
-
-function shouldTrackSite(site: TrackedSite, now = Date.now()) {
-	return site.limitConfigured && getEffectiveRemainingSeconds(site, now) > 0;
-}
-
-function shouldBlockSite(site: TrackedSite, now = Date.now()) {
-	return site.limitConfigured && getEffectiveRemainingSeconds(site, now) <= 0;
 }
 
 async function sendTabMessage<T>(
@@ -68,17 +58,17 @@ async function sendTabMessage<T>(
 	}
 }
 
-async function notifyTabBlock(tabId: number, site: TrackedSite) {
+async function notifyTabBlock(tabId: number, siteName: string) {
 	await sendTabMessage(tabId, {
 		type: TRACKER_MESSAGE.BLOCK_SITE,
-		siteName: site.name,
+		siteName,
 	});
 
 	try {
 		await chrome.scripting.executeScript({
 			target: { tabId },
 			func: injectBlockOverlay,
-			args: [site.name],
+			args: [siteName],
 		});
 	} catch {
 		// Tab may not allow scripting (chrome://, Web Store, etc.)
@@ -99,6 +89,7 @@ async function notifyAllTrackedTabs() {
 	}
 
 	const tabs = await chrome.tabs.query({});
+	const options = runtimeOptions();
 
 	for (const tab of tabs) {
 		if (!tab.id || !tab.url) {
@@ -111,8 +102,10 @@ async function notifyAllTrackedTabs() {
 			continue;
 		}
 
-		if (shouldBlockSite(site)) {
-			await notifyTabBlock(tab.id, site);
+		const normalized = normalizeSiteForToday(site);
+
+		if (shouldBlockSite(normalized, options)) {
+			await notifyTabBlock(tab.id, normalized.name);
 			continue;
 		}
 
@@ -142,7 +135,7 @@ async function flushActiveTracking(now = Date.now()) {
 		return null;
 	}
 
-	const site = persisted.sites[siteIndex];
+	const site = normalizeSiteForToday(persisted.sites[siteIndex]);
 	const elapsedSeconds = Math.floor(
 		(now - runtimeState.trackingStartedAt) / 1000,
 	);
@@ -151,10 +144,9 @@ async function flushActiveTracking(now = Date.now()) {
 		return site;
 	}
 
-	const nextRemaining = Math.max(0, site.remainingSeconds - elapsedSeconds);
 	const updatedSite: TrackedSite = {
 		...site,
-		remainingSeconds: nextRemaining,
+		usedSecondsToday: site.usedSecondsToday + elapsedSeconds,
 		lastUpdatedAt: now,
 	};
 
@@ -167,7 +159,7 @@ async function flushActiveTracking(now = Date.now()) {
 	runtimeState.lastAlarmAt = now;
 	await saveRuntimeState(runtimeState);
 
-	if (nextRemaining <= 0) {
+	if (shouldBlockSite(updatedSite, runtimeOptions(now))) {
 		runtimeState.trackingSiteId = null;
 		runtimeState.trackingStartedAt = null;
 		await saveRuntimeState(runtimeState);
@@ -197,9 +189,9 @@ async function syncActiveTab() {
 		return;
 	}
 
-	const site = findTrackedSiteByUrl(persisted.sites, tab.url);
+	const matched = findTrackedSiteByUrl(persisted.sites, tab.url);
 
-	if (!site) {
+	if (!matched) {
 		if (runtimeState.trackingSiteId) {
 			await flushActiveTracking();
 		}
@@ -210,18 +202,21 @@ async function syncActiveTab() {
 		return;
 	}
 
+	const site = normalizeSiteForToday(matched);
+	const options = runtimeOptions();
+
 	await updatePersistedActiveSiteId(site.id);
 
-	if (shouldBlockSite(site)) {
+	if (shouldBlockSite(site, options)) {
 		await flushActiveTracking();
 		runtimeState.trackingSiteId = null;
 		runtimeState.trackingStartedAt = null;
 		await saveRuntimeState(runtimeState);
-		await notifyTabBlock(tab.id, { ...site, remainingSeconds: 0 });
+		await notifyTabBlock(tab.id, site.name);
 		return;
 	}
 
-	if (!shouldTrackSite(site)) {
+	if (!shouldTrackSite(site, options)) {
 		runtimeState.trackingSiteId = null;
 		runtimeState.trackingStartedAt = null;
 		await saveRuntimeState(runtimeState);
@@ -258,9 +253,15 @@ async function getTabBlockState(
 		return { blocked: false };
 	}
 
-	const site = findTrackedSiteByUrl(persisted.sites, tabUrl);
+	const matched = findTrackedSiteByUrl(persisted.sites, tabUrl);
 
-	if (!site || !shouldBlockSite(site)) {
+	if (!matched) {
+		return { blocked: false };
+	}
+
+	const site = normalizeSiteForToday(matched);
+
+	if (!shouldBlockSite(site, runtimeOptions())) {
 		return { blocked: false };
 	}
 
@@ -308,13 +309,7 @@ chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
 		if (tab.id && tab.url) {
 			void getTabBlockState(tab.url).then((state) => {
 				if (state.blocked && state.siteName && tab.id) {
-					void notifyTabBlock(tab.id, {
-						id: "blocked",
-						name: state.siteName,
-						remainingSeconds: 0,
-						lastUpdatedAt: Date.now(),
-						limitConfigured: true,
-					});
+					void notifyTabBlock(tab.id, state.siteName);
 				}
 			});
 		}
@@ -333,6 +328,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	if (message?.type === TRACKER_MESSAGE.GET_RUNTIME) {
 		const response: TrackerRuntimeResponse = {
 			trackingSiteId: runtimeState.trackingSiteId,
+			trackingStartedAt: runtimeState.trackingStartedAt,
 		};
 		sendResponse(response);
 		return true;

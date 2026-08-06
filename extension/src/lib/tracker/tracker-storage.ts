@@ -2,6 +2,7 @@ import {
 	TRACKER_RUNTIME_KEY,
 	TRACKER_STORE_KEY,
 } from "@/lib/tracker/constants";
+import { formatUsageDay } from "@/lib/tracker/site-usage";
 import {
 	DEFAULT_RUNTIME_STATE,
 	type PersistedTrackerState,
@@ -19,24 +20,35 @@ interface PersistedStoreEnvelope {
 	version: number;
 }
 
-function migrateSite(site: TrackedSite & { minutesRemaining?: number }) {
-	if (typeof site.remainingSeconds === "number") {
+function migrateSite(
+	site: TrackedSite & {
+		minutesRemaining?: number;
+		remainingSeconds?: number;
+	},
+) {
+	if (typeof site.allowedSeconds === "number") {
 		return {
 			...site,
+			usedSecondsToday: site.usedSecondsToday ?? 0,
+			usageDay: site.usageDay ?? formatUsageDay(),
 			lastUpdatedAt: site.lastUpdatedAt ?? Date.now(),
 			limitConfigured: site.limitConfigured ?? false,
 		};
 	}
 
-	const minutes = site.minutesRemaining ?? 0;
+	const legacyRemaining =
+		site.remainingSeconds ??
+		(site.minutesRemaining !== undefined ? site.minutesRemaining * 60 : 0);
 
 	return {
 		id: site.id,
 		name: site.name,
 		url: site.url,
-		remainingSeconds: minutes * 60,
+		allowedSeconds: legacyRemaining,
+		usedSecondsToday: 0,
+		usageDay: formatUsageDay(),
 		lastUpdatedAt: Date.now(),
-		limitConfigured: minutes > 0,
+		limitConfigured: site.limitConfigured ?? legacyRemaining > 0,
 	};
 }
 
@@ -84,7 +96,12 @@ function migrateLogEntry(
 
 function migratePersistedState(
 	state: PersistedTrackerState & {
-		sites: Array<TrackedSite & { minutesRemaining?: number }>;
+		sites: Array<
+			TrackedSite & {
+				minutesRemaining?: number;
+				remainingSeconds?: number;
+			}
+		>;
 		updateLogs: Array<
 			UpdateLogEntry & {
 				changes: Array<
@@ -114,7 +131,12 @@ function parsePersistedStore(raw: string | null): PersistedTrackerState | null {
 		const parsed = JSON.parse(raw) as PersistedStoreEnvelope;
 		return migratePersistedState(
 			parsed.state as PersistedTrackerState & {
-				sites: Array<TrackedSite & { minutesRemaining?: number }>;
+				sites: Array<
+					TrackedSite & {
+						minutesRemaining?: number;
+						remainingSeconds?: number;
+					}
+				>;
 				updateLogs: Array<
 					UpdateLogEntry & {
 						changes: Array<

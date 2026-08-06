@@ -1,24 +1,33 @@
+import { formatUsageDay } from "@/lib/tracker/site-usage";
 import type { TrackedSite, UpdateLogEntry } from "@/types/tracker";
+
+const today = formatUsageDay();
 
 export const INITIAL_SITES: TrackedSite[] = [
 	{
 		id: "youtube",
 		name: "Youtube",
-		remainingSeconds: 16 * 60,
+		allowedSeconds: 30 * 60,
+		usedSecondsToday: 14 * 60,
+		usageDay: today,
 		lastUpdatedAt: Date.now(),
 		limitConfigured: true,
 	},
 	{
 		id: "tiktok",
 		name: "TikTok",
-		remainingSeconds: 15 * 60,
+		allowedSeconds: 25 * 60,
+		usedSecondsToday: 10 * 60,
+		usageDay: today,
 		lastUpdatedAt: Date.now(),
 		limitConfigured: true,
 	},
 	{
 		id: "instagram",
 		name: "Instagram",
-		remainingSeconds: 15 * 60,
+		allowedSeconds: 20 * 60,
+		usedSecondsToday: 5 * 60,
+		usageDay: today,
 		lastUpdatedAt: Date.now(),
 		limitConfigured: true,
 	},

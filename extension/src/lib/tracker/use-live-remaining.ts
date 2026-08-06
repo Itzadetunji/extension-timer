@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentTabHostUrl } from "@/lib/tabs/get-current-tab-url";
-import { buildLiveRemainingMap } from "@/lib/tracker/compute-remaining";
 import { findTrackedSiteByUrl } from "@/lib/tracker/match-tracked-site";
 import { TRACKER_MESSAGE } from "@/lib/tracker/messages";
+import { buildLiveUsedSecondsMap } from "@/lib/tracker/site-usage";
 import type { SiteId, TrackedSite } from "@/types/tracker";
 
-export function useLiveRemainingSeconds(sites: TrackedSite[]) {
+export function useLiveUsedSecondsToday(sites: TrackedSite[]) {
 	const [now, setNow] = useState(() => Date.now());
 	const [trackingSiteId, setTrackingSiteId] = useState<SiteId | null>(null);
+	const [trackingStartedAt, setTrackingStartedAt] = useState<number | null>(
+		null,
+	);
 
 	useEffect(() => {
 		const clock = window.setInterval(() => {
@@ -29,6 +32,10 @@ export function useLiveRemainingSeconds(sites: TrackedSite[]) {
 					if (response?.trackingSiteId !== undefined) {
 						setTrackingSiteId(response.trackingSiteId);
 					}
+
+					if (response?.trackingStartedAt !== undefined) {
+						setTrackingStartedAt(response.trackingStartedAt);
+					}
 				},
 			);
 		};
@@ -40,8 +47,13 @@ export function useLiveRemainingSeconds(sites: TrackedSite[]) {
 	}, []);
 
 	return useMemo(
-		() => buildLiveRemainingMap(sites, { now, trackingSiteId }),
-		[sites, now, trackingSiteId],
+		() =>
+			buildLiveUsedSecondsMap(sites, {
+				now,
+				trackingSiteId,
+				trackingStartedAt,
+			}),
+		[sites, now, trackingSiteId, trackingStartedAt],
 	);
 }
 

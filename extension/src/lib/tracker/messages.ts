@@ -9,6 +9,7 @@ export const TRACKER_MESSAGE = {
 
 export interface TrackerRuntimeResponse {
 	trackingSiteId: SiteId | null;
+	trackingStartedAt: number | null;
 }
 
 export interface TabBlockStateResponse {

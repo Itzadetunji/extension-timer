@@ -8,11 +8,11 @@ import { UpdateLogsScreen } from "@/components/popup/screens/update-logs-screen"
 import { UpdateTimesScreen } from "@/components/popup/screens/update-times-screen";
 import {
 	useActiveSiteSync,
-	useLiveRemainingSeconds,
+	useLiveUsedSecondsToday,
 	useTrackerStorageSync,
 } from "@/lib/tracker/use-live-remaining";
 import {
-	buildDraftSeconds,
+	buildDraftAllowedSeconds,
 	selectPendingChanges,
 	useTrackerStore,
 } from "@/stores/tracker-store";
@@ -20,7 +20,9 @@ import type { Screen } from "@/types/tracker";
 
 export function PopupApp() {
 	const [screen, setScreen] = useState<Screen>("home");
-	const [draftSeconds, setDraftSeconds] = useState<Record<string, number>>({});
+	const [draftAllowedSeconds, setDraftAllowedSeconds] = useState<
+		Record<string, number>
+	>({});
 	const [addSiteDialogOpen, setAddSiteDialogOpen] = useState(false);
 	const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
 	const [doneDialogOpen, setDoneDialogOpen] = useState(false);
@@ -34,24 +36,24 @@ export function PopupApp() {
 	const addSite = useTrackerStore((state) => state.addSite);
 	const setActiveSiteId = useTrackerStore((state) => state.setActiveSiteId);
 
-	const remainingBySiteId = useLiveRemainingSeconds(sites);
+	const usedSecondsBySiteId = useLiveUsedSecondsToday(sites);
 	useTrackerStorageSync();
 	useActiveSiteSync(sites, setActiveSiteId);
 
 	const pendingChanges = useMemo(
-		() => selectPendingChanges(sites, draftSeconds),
-		[draftSeconds, sites],
+		() => selectPendingChanges(sites, draftAllowedSeconds),
+		[draftAllowedSeconds, sites],
 	);
 
 	const handleDraftChange = (siteId: string, seconds: number) => {
-		setDraftSeconds((current) => ({
+		setDraftAllowedSeconds((current) => ({
 			...current,
 			[siteId]: Math.max(0, seconds),
 		}));
 	};
 
 	const handleOpenUpdateFlow = () => {
-		setDraftSeconds(buildDraftSeconds(sites));
+		setDraftAllowedSeconds(buildDraftAllowedSeconds(sites));
 		setScreen("update-times");
 	};
 
@@ -64,9 +66,9 @@ export function PopupApp() {
 
 		if (result.site) {
 			const addedSite = result.site;
-			setDraftSeconds((current) => ({
+			setDraftAllowedSeconds((current) => ({
 				...current,
-				[addedSite.id]: addedSite.remainingSeconds,
+				[addedSite.id]: addedSite.allowedSeconds,
 			}));
 		}
 
@@ -86,7 +88,7 @@ export function PopupApp() {
 	};
 
 	const handleConfirmUpdate = (submittedReason: string) => {
-		const changes = applyTimeUpdate(draftSeconds, submittedReason);
+		const changes = applyTimeUpdate(draftAllowedSeconds, submittedReason);
 
 		if (changes.length === 0) {
 			return;
@@ -114,7 +116,7 @@ export function PopupApp() {
 				<HomeScreen
 					sites={sites}
 					activeSiteId={activeSiteId}
-					remainingBySiteId={remainingBySiteId}
+					usedSecondsBySiteId={usedSecondsBySiteId}
 					onUpdateTimes={handleOpenUpdateFlow}
 					onViewLogs={() => setScreen("update-logs")}
 				/>
@@ -123,7 +125,7 @@ export function PopupApp() {
 			{screen === "update-times" && (
 				<UpdateTimesScreen
 					sites={sites}
-					draftSeconds={draftSeconds}
+					draftAllowedSeconds={draftAllowedSeconds}
 					onDraftChange={handleDraftChange}
 					onBack={() => setScreen("home")}
 					onSubmit={handleSubmitUpdate}

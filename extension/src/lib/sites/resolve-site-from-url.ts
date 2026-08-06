@@ -1,3 +1,4 @@
+import { formatUsageDay } from "@/lib/tracker/site-usage";
 import type { KnownSiteId, TrackedSite } from "@/types/tracker";
 
 const HOSTNAME_MAP: Record<string, { id: KnownSiteId; name: string }> = {
@@ -41,7 +42,9 @@ export function resolveSiteFromUrl(url: string): TrackedSite | null {
 			id: known.id,
 			name: known.name,
 			url: normalized,
-			remainingSeconds: 0,
+			allowedSeconds: 0,
+			usedSecondsToday: 0,
+			usageDay: formatUsageDay(),
 			lastUpdatedAt: Date.now(),
 			limitConfigured: false,
 		};
@@ -51,7 +54,9 @@ export function resolveSiteFromUrl(url: string): TrackedSite | null {
 		id: `custom:${host}`,
 		name: host,
 		url: normalized,
-		remainingSeconds: 0,
+		allowedSeconds: 0,
+		usedSecondsToday: 0,
+		usageDay: formatUsageDay(),
 		lastUpdatedAt: Date.now(),
 		limitConfigured: false,
 	};

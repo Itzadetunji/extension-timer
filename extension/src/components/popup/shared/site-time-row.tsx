@@ -1,3 +1,7 @@
+import {
+	InfoTooltip,
+	TIME_SPENT_TODAY_TOOLTIP,
+} from "@/components/popup/shared/info-tooltip";
 import { SiteIcon } from "@/components/popup/shared/site-icon";
 import { Separator } from "@/components/ui/separator";
 import { formatRemainingSeconds } from "@/lib/tracker/format-time";
@@ -5,13 +9,13 @@ import type { TrackedSite } from "@/types/tracker";
 
 interface SiteTimeRowProps {
 	site: TrackedSite;
-	remainingSeconds: number;
+	usedSecondsToday: number;
 	highlight?: boolean;
 }
 
 export function SiteTimeRow({
 	site,
-	remainingSeconds,
+	usedSecondsToday,
 	highlight = false,
 }: SiteTimeRowProps) {
 	return (
@@ -27,7 +31,7 @@ export function SiteTimeRow({
 				<span className="truncate text-sm font-medium">{site.name}</span>
 			</div>
 			<span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-				{formatRemainingSeconds(remainingSeconds)}
+				{formatRemainingSeconds(usedSecondsToday)}
 			</span>
 		</div>
 	);
@@ -35,28 +39,34 @@ export function SiteTimeRow({
 
 interface SiteTimeListProps {
 	sites: TrackedSite[];
-	remainingBySiteId: Record<string, number>;
+	usedSecondsBySiteId: Record<string, number>;
 	title?: string;
 	showSeparator?: boolean;
 }
 
 export function SiteTimeList({
 	sites,
-	remainingBySiteId,
+	usedSecondsBySiteId,
 	title = "Track Times",
 	showSeparator = true,
 }: SiteTimeListProps) {
 	return (
 		<section className="space-y-3">
-			<h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-				{title}
-			</h2>
+			<div className="flex items-center gap-1.5">
+				<h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+					{title}
+				</h2>
+				<InfoTooltip
+					label="Time spent today"
+					content={TIME_SPENT_TODAY_TOOLTIP}
+				/>
+			</div>
 			<div>
 				{sites.map((site, index) => (
 					<div key={site.id}>
 						<SiteTimeRow
 							site={site}
-							remainingSeconds={remainingBySiteId[site.id] ?? 0}
+							usedSecondsToday={usedSecondsBySiteId[site.id] ?? 0}
 						/>
 						{showSeparator && index < sites.length - 1 && <Separator />}
 					</div>

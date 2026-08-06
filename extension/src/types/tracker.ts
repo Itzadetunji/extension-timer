@@ -6,7 +6,9 @@ export interface TrackedSite {
 	id: SiteId;
 	name: string;
 	url?: string;
-	remainingSeconds: number;
+	allowedSeconds: number;
+	usedSecondsToday: number;
+	usageDay: string;
 	lastUpdatedAt: number;
 	limitConfigured: boolean;
 }
