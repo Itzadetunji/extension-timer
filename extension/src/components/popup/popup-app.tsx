@@ -75,7 +75,7 @@ export function PopupApp() {
 
 		setReasonDialogOpen(false);
 		setDoneMessage(
-			`Your time limits were updated. ${totalAdded} minute${totalAdded === 1 ? "" : "s"} added across ${changes.length} site${changes.length === 1 ? "" : "s"}.`,
+			`I'm gonna trust you are not a liar. Your time limits were updated. ${totalAdded} minute${totalAdded === 1 ? "" : "s"} added across ${changes.length} site${changes.length === 1 ? "" : "s"}.`,
 		);
 		setDoneDialogOpen(true);
 		setScreen("home");
