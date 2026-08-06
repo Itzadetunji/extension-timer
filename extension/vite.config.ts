@@ -6,6 +6,8 @@ import hotReloadExtension from "hot-reload-extension-vite";
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
+const isUiDev = process.env.UI_DEV === "true";
+
 export default defineConfig(() => {
 	return {
 		base: "./",
@@ -13,23 +15,30 @@ export default defineConfig(() => {
 			react(),
 			tailwindcss(),
 			tsconfigPaths(),
-			hotReloadExtension({
-				log: true,
-				backgroundPath: "src/pages/background/index.ts",
-			}),
-			viteStaticCopy({
-				targets: [
-					{
-						src: "manifest.json",
-						dest: ".",
-					},
-					{
-						src: "src/style.css",
-						dest: "./",
-					},
-				],
-			}),
-		],
+			!isUiDev &&
+				hotReloadExtension({
+					log: true,
+					backgroundPath: "src/pages/background/index.ts",
+				}),
+			!isUiDev &&
+				viteStaticCopy({
+					targets: [
+						{
+							src: "manifest.json",
+							dest: ".",
+						},
+						{
+							src: "src/style.css",
+							dest: "./",
+						},
+					],
+				}),
+		].filter(Boolean),
+		server: isUiDev
+			? {
+					open: "/src/pages/popup/index.html",
+				}
+			: undefined,
 		build: {
 			rollupOptions: {
 				input: {
