@@ -7,7 +7,12 @@ import { HomeScreen } from "@/components/popup/screens/home-screen";
 import { UpdateLogsScreen } from "@/components/popup/screens/update-logs-screen";
 import { UpdateTimesScreen } from "@/components/popup/screens/update-times-screen";
 import {
-	buildDraftMinutes,
+	useActiveSiteSync,
+	useLiveRemainingSeconds,
+	useTrackerStorageSync,
+} from "@/lib/tracker/use-live-remaining";
+import {
+	buildDraftSeconds,
 	selectPendingChanges,
 	useTrackerStore,
 } from "@/stores/tracker-store";
@@ -15,7 +20,7 @@ import type { Screen } from "@/types/tracker";
 
 export function PopupApp() {
 	const [screen, setScreen] = useState<Screen>("home");
-	const [draftMinutes, setDraftMinutes] = useState<Record<string, number>>({});
+	const [draftSeconds, setDraftSeconds] = useState<Record<string, number>>({});
 	const [addSiteDialogOpen, setAddSiteDialogOpen] = useState(false);
 	const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
 	const [doneDialogOpen, setDoneDialogOpen] = useState(false);
@@ -27,21 +32,26 @@ export function PopupApp() {
 	const hasHydrated = useTrackerStore((state) => state.hasHydrated);
 	const applyTimeUpdate = useTrackerStore((state) => state.applyTimeUpdate);
 	const addSite = useTrackerStore((state) => state.addSite);
+	const setActiveSiteId = useTrackerStore((state) => state.setActiveSiteId);
+
+	const remainingBySiteId = useLiveRemainingSeconds(sites);
+	useTrackerStorageSync();
+	useActiveSiteSync(sites, setActiveSiteId);
 
 	const pendingChanges = useMemo(
-		() => selectPendingChanges(sites, draftMinutes),
-		[draftMinutes, sites],
+		() => selectPendingChanges(sites, draftSeconds),
+		[draftSeconds, sites],
 	);
 
-	const handleDraftChange = (siteId: string, minutes: number) => {
-		setDraftMinutes((current) => ({
+	const handleDraftChange = (siteId: string, seconds: number) => {
+		setDraftSeconds((current) => ({
 			...current,
-			[siteId]: Math.max(0, minutes),
+			[siteId]: Math.max(0, seconds),
 		}));
 	};
 
 	const handleOpenUpdateFlow = () => {
-		setDraftMinutes(buildDraftMinutes(sites));
+		setDraftSeconds(buildDraftSeconds(sites));
 		setScreen("update-times");
 	};
 
@@ -54,9 +64,9 @@ export function PopupApp() {
 
 		if (result.site) {
 			const addedSite = result.site;
-			setDraftMinutes((current) => ({
+			setDraftSeconds((current) => ({
 				...current,
-				[addedSite.id]: addedSite.minutesRemaining,
+				[addedSite.id]: addedSite.remainingSeconds,
 			}));
 		}
 
@@ -66,7 +76,7 @@ export function PopupApp() {
 	const handleSubmitUpdate = () => {
 		if (pendingChanges.length === 0) {
 			setDoneMessage(
-				"No time was added. Increase at least one site limit to update.",
+				"No time changes were made. Adjust at least one site limit.",
 			);
 			setDoneDialogOpen(true);
 			return;
@@ -76,20 +86,15 @@ export function PopupApp() {
 	};
 
 	const handleConfirmUpdate = (submittedReason: string) => {
-		const changes = applyTimeUpdate(draftMinutes, submittedReason);
+		const changes = applyTimeUpdate(draftSeconds, submittedReason);
 
 		if (changes.length === 0) {
 			return;
 		}
 
-		const totalAdded = changes.reduce(
-			(sum, change) => sum + change.addedMinutes,
-			0,
-		);
-
 		setReasonDialogOpen(false);
 		setDoneMessage(
-			`I'm gonna trust you are not a liar. Your time limits were updated. ${totalAdded} minute${totalAdded === 1 ? "" : "s"} added across ${changes.length} site${changes.length === 1 ? "" : "s"}.`,
+			`I'm gonna trust you are not a liar. Your time limits were updated for ${changes.length} site${changes.length === 1 ? "" : "s"}.`,
 		);
 		setDoneDialogOpen(true);
 		setScreen("home");
@@ -109,6 +114,7 @@ export function PopupApp() {
 				<HomeScreen
 					sites={sites}
 					activeSiteId={activeSiteId}
+					remainingBySiteId={remainingBySiteId}
 					onUpdateTimes={handleOpenUpdateFlow}
 					onViewLogs={() => setScreen("update-logs")}
 				/>
@@ -117,7 +123,7 @@ export function PopupApp() {
 			{screen === "update-times" && (
 				<UpdateTimesScreen
 					sites={sites}
-					draftMinutes={draftMinutes}
+					draftSeconds={draftSeconds}
 					onDraftChange={handleDraftChange}
 					onBack={() => setScreen("home")}
 					onSubmit={handleSubmitUpdate}

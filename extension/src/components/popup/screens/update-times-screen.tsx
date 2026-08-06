@@ -7,16 +7,20 @@ import type { TrackedSite } from "@/types/tracker";
 
 interface UpdateTimesScreenProps {
 	sites: TrackedSite[];
-	draftMinutes: Record<string, number>;
-	onDraftChange: (siteId: string, minutes: number) => void;
+	draftSeconds: Record<string, number>;
+	onDraftChange: (siteId: string, seconds: number) => void;
 	onBack: () => void;
 	onSubmit: () => void;
 	onAddSite: () => void;
 }
 
+function secondsToMinutesInput(seconds: number) {
+	return Math.floor(seconds / 60);
+}
+
 export function UpdateTimesScreen({
 	sites,
-	draftMinutes,
+	draftSeconds,
 	onDraftChange,
 	onBack,
 	onSubmit,
@@ -50,10 +54,15 @@ export function UpdateTimesScreen({
 									type="number"
 									min={0}
 									inputMode="numeric"
-									value={draftMinutes[site.id] ?? site.minutesRemaining}
+									value={secondsToMinutesInput(
+										draftSeconds[site.id] ?? site.remainingSeconds,
+									)}
 									onChange={(event) => {
-										const value = Number.parseInt(event.target.value, 10);
-										onDraftChange(site.id, Number.isNaN(value) ? 0 : value);
+										const minutes = Number.parseInt(event.target.value, 10);
+										onDraftChange(
+											site.id,
+											(Number.isNaN(minutes) ? 0 : minutes) * 60,
+										);
 									}}
 									className="h-9 w-16 border border-input px-2 text-center tabular-nums"
 									aria-label={`${site.name} minutes`}

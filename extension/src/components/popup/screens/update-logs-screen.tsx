@@ -6,15 +6,15 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+	formatDeltaSeconds,
+	formatLogSummary,
+} from "@/lib/tracker/format-time";
 import type { UpdateLogEntry } from "@/types/tracker";
 
 interface UpdateLogsScreenProps {
 	logs: UpdateLogEntry[];
 	onBack: () => void;
-}
-
-function formatAddedMinutes(minutes: number) {
-	return minutes === 1 ? "1 min" : `${minutes} mins`;
 }
 
 export function UpdateLogsScreen({ logs, onBack }: UpdateLogsScreenProps) {
@@ -29,8 +29,8 @@ export function UpdateLogsScreen({ logs, onBack }: UpdateLogsScreenProps) {
 					</p>
 				) : (
 					logs.map((log, index) => {
-						const totalAdded = log.changes.reduce(
-							(sum, change) => sum + change.addedMinutes,
+						const totalDelta = log.changes.reduce(
+							(sum, change) => sum + change.deltaSeconds,
 							0,
 						);
 
@@ -43,7 +43,7 @@ export function UpdateLogsScreen({ logs, onBack }: UpdateLogsScreenProps) {
 								<Accordion className="border border-border px-3">
 									<AccordionItem value={log.id}>
 										<AccordionTrigger className="py-3 text-sm font-normal text-muted-foreground hover:no-underline">
-											(added {formatAddedMinutes(totalAdded)})
+											({formatLogSummary(totalDelta)})
 										</AccordionTrigger>
 										<AccordionContent className="space-y-3 pb-3">
 											{log.changes.map((change) => (
@@ -56,7 +56,7 @@ export function UpdateLogsScreen({ logs, onBack }: UpdateLogsScreenProps) {
 														<span className="text-sm">{change.siteName}</span>
 													</div>
 													<span className="text-sm tabular-nums text-muted-foreground">
-														+{change.addedMinutes}m
+														{formatDeltaSeconds(change.deltaSeconds)}
 													</span>
 												</div>
 											))}

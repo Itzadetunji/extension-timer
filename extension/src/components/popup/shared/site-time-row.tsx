@@ -1,13 +1,19 @@
 import { SiteIcon } from "@/components/popup/shared/site-icon";
 import { Separator } from "@/components/ui/separator";
+import { formatRemainingSeconds } from "@/lib/tracker/format-time";
 import type { TrackedSite } from "@/types/tracker";
 
 interface SiteTimeRowProps {
 	site: TrackedSite;
+	remainingSeconds: number;
 	highlight?: boolean;
 }
 
-export function SiteTimeRow({ site, highlight = false }: SiteTimeRowProps) {
+export function SiteTimeRow({
+	site,
+	remainingSeconds,
+	highlight = false,
+}: SiteTimeRowProps) {
 	return (
 		<div
 			className={
@@ -21,7 +27,7 @@ export function SiteTimeRow({ site, highlight = false }: SiteTimeRowProps) {
 				<span className="truncate text-sm font-medium">{site.name}</span>
 			</div>
 			<span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-				{site.minutesRemaining}m
+				{formatRemainingSeconds(remainingSeconds)}
 			</span>
 		</div>
 	);
@@ -29,12 +35,14 @@ export function SiteTimeRow({ site, highlight = false }: SiteTimeRowProps) {
 
 interface SiteTimeListProps {
 	sites: TrackedSite[];
+	remainingBySiteId: Record<string, number>;
 	title?: string;
 	showSeparator?: boolean;
 }
 
 export function SiteTimeList({
 	sites,
+	remainingBySiteId,
 	title = "Track Times",
 	showSeparator = true,
 }: SiteTimeListProps) {
@@ -46,7 +54,10 @@ export function SiteTimeList({
 			<div>
 				{sites.map((site, index) => (
 					<div key={site.id}>
-						<SiteTimeRow site={site} />
+						<SiteTimeRow
+							site={site}
+							remainingSeconds={remainingBySiteId[site.id] ?? 0}
+						/>
 						{showSeparator && index < sites.length - 1 && <Separator />}
 					</div>
 				))}

@@ -1,9 +1,4 @@
-export type KnownSiteId =
-	| "youtube"
-	| "tiktok"
-	| "instagram"
-	| "x"
-	| "linkedin";
+export type KnownSiteId = "youtube" | "tiktok" | "instagram" | "x" | "linkedin";
 
 export type SiteId = KnownSiteId | string;
 
@@ -11,15 +6,17 @@ export interface TrackedSite {
 	id: SiteId;
 	name: string;
 	url?: string;
-	minutesRemaining: number;
+	remainingSeconds: number;
+	lastUpdatedAt: number;
+	limitConfigured: boolean;
 }
 
 export interface SiteTimeChange {
 	siteId: SiteId;
 	siteName: string;
-	previousMinutes: number;
-	newMinutes: number;
-	addedMinutes: number;
+	previousSeconds: number;
+	newSeconds: number;
+	deltaSeconds: number;
 }
 
 export interface UpdateLogEntry {

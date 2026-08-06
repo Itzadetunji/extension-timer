@@ -6,11 +6,12 @@ import {
 	INITIAL_SITES,
 	INITIAL_UPDATE_LOGS,
 } from "@/lib/mock-data";
-import { createExtensionStorage } from "@/lib/storage/create-extension-storage";
 import {
 	isDuplicateSite,
 	resolveSiteFromUrl,
 } from "@/lib/sites/resolve-site-from-url";
+import { createExtensionStorage } from "@/lib/storage/create-extension-storage";
+import { migratePersistedState } from "@/lib/tracker/tracker-storage";
 import type {
 	SiteId,
 	SiteTimeChange,
@@ -29,7 +30,7 @@ interface PersistedTrackerState {
 interface TrackerStore extends PersistedTrackerState {
 	hasHydrated: boolean;
 	applyTimeUpdate: (
-		draftMinutes: Record<string, number>,
+		draftSeconds: Record<string, number>,
 		reason: string,
 	) => SiteTimeChange[];
 	setActiveSiteId: (siteId: SiteId) => void;
@@ -48,13 +49,13 @@ function formatToday() {
 
 function buildChanges(
 	sites: TrackedSite[],
-	draftMinutes: Record<string, number>,
+	draftSeconds: Record<string, number>,
 ): SiteTimeChange[] {
 	return sites.flatMap((site) => {
-		const nextMinutes = draftMinutes[site.id] ?? site.minutesRemaining;
-		const addedMinutes = nextMinutes - site.minutesRemaining;
+		const nextSeconds = draftSeconds[site.id] ?? site.remainingSeconds;
+		const deltaSeconds = nextSeconds - site.remainingSeconds;
 
-		if (addedMinutes <= 0) {
+		if (deltaSeconds === 0) {
 			return [];
 		}
 
@@ -62,9 +63,9 @@ function buildChanges(
 			{
 				siteId: site.id,
 				siteName: site.name,
-				previousMinutes: site.minutesRemaining,
-				newMinutes: nextMinutes,
-				addedMinutes,
+				previousSeconds: site.remainingSeconds,
+				newSeconds: nextSeconds,
+				deltaSeconds,
 			},
 		];
 	});
@@ -104,18 +105,29 @@ export const useTrackerStore = create<TrackerStore>()(
 				return { error: null, site };
 			},
 
-			applyTimeUpdate: (draftMinutes, reason) => {
+			applyTimeUpdate: (draftSeconds, reason) => {
 				const { sites, updateLogs } = get();
-				const changes = buildChanges(sites, draftMinutes);
+				const changes = buildChanges(sites, draftSeconds);
 
 				if (changes.length === 0) {
 					return [];
 				}
 
-				const updatedSites = sites.map((site) => ({
-					...site,
-					minutesRemaining: draftMinutes[site.id] ?? site.minutesRemaining,
-				}));
+				const now = Date.now();
+				const updatedSites = sites.map((site) => {
+					const nextSeconds = draftSeconds[site.id] ?? site.remainingSeconds;
+
+					if (nextSeconds === site.remainingSeconds) {
+						return site;
+					}
+
+					return {
+						...site,
+						remainingSeconds: nextSeconds,
+						lastUpdatedAt: now,
+						limitConfigured: true,
+					};
+				});
 
 				const newLog: UpdateLogEntry = {
 					id: `log-${Date.now()}`,
@@ -147,6 +159,25 @@ export const useTrackerStore = create<TrackerStore>()(
 				updateLogs: state.updateLogs,
 				activeSiteId: state.activeSiteId,
 			}),
+			migrate: (persistedState) =>
+				migratePersistedState(
+					persistedState as PersistedTrackerState & {
+						sites: Array<TrackedSite & { minutesRemaining?: number }>;
+						updateLogs: Array<
+							UpdateLogEntry & {
+								changes: Array<
+									SiteTimeChange & {
+										previousMinutes?: number;
+										newMinutes?: number;
+										addedMinutes?: number;
+										addedSeconds?: number;
+									}
+								>;
+							}
+						>;
+					},
+				),
+			version: 1,
 		},
 	),
 );
@@ -163,15 +194,15 @@ if (useTrackerStore.persist.hasHydrated()) {
 	useTrackerStore.setState({ hasHydrated: true });
 }
 
-export function buildDraftMinutes(sites: TrackedSite[]) {
+export function buildDraftSeconds(sites: TrackedSite[]) {
 	return Object.fromEntries(
-		sites.map((site) => [site.id, site.minutesRemaining]),
+		sites.map((site) => [site.id, site.remainingSeconds]),
 	);
 }
 
 export function selectPendingChanges(
 	sites: TrackedSite[],
-	draftMinutes: Record<string, number>,
+	draftSeconds: Record<string, number>,
 ) {
-	return buildChanges(sites, draftMinutes);
+	return buildChanges(sites, draftSeconds);
 }

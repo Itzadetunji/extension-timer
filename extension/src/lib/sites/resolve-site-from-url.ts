@@ -18,9 +18,8 @@ export function normalizeUrlInput(input: string) {
 	}
 
 	try {
-		return new URL(
-			trimmed.includes("://") ? trimmed : `https://${trimmed}`,
-		).href;
+		return new URL(trimmed.includes("://") ? trimmed : `https://${trimmed}`)
+			.href;
 	} catch {
 		return "";
 	}
@@ -42,7 +41,9 @@ export function resolveSiteFromUrl(url: string): TrackedSite | null {
 			id: known.id,
 			name: known.name,
 			url: normalized,
-			minutesRemaining: 0,
+			remainingSeconds: 0,
+			lastUpdatedAt: Date.now(),
+			limitConfigured: false,
 		};
 	}
 
@@ -50,7 +51,9 @@ export function resolveSiteFromUrl(url: string): TrackedSite | null {
 		id: `custom:${host}`,
 		name: host,
 		url: normalized,
-		minutesRemaining: 0,
+		remainingSeconds: 0,
+		lastUpdatedAt: Date.now(),
+		limitConfigured: false,
 	};
 }
 

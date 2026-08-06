@@ -1,9 +1,27 @@
 import type { TrackedSite, UpdateLogEntry } from "@/types/tracker";
 
 export const INITIAL_SITES: TrackedSite[] = [
-	{ id: "youtube", name: "Youtube", minutesRemaining: 16 },
-	{ id: "tiktok", name: "TikTok", minutesRemaining: 15 },
-	{ id: "instagram", name: "Instagram", minutesRemaining: 15 },
+	{
+		id: "youtube",
+		name: "Youtube",
+		remainingSeconds: 16 * 60,
+		lastUpdatedAt: Date.now(),
+		limitConfigured: true,
+	},
+	{
+		id: "tiktok",
+		name: "TikTok",
+		remainingSeconds: 15 * 60,
+		lastUpdatedAt: Date.now(),
+		limitConfigured: true,
+	},
+	{
+		id: "instagram",
+		name: "Instagram",
+		remainingSeconds: 15 * 60,
+		lastUpdatedAt: Date.now(),
+		limitConfigured: true,
+	},
 ];
 
 export const ACTIVE_SITE_ID = "youtube";
@@ -17,16 +35,16 @@ export const INITIAL_UPDATE_LOGS: UpdateLogEntry[] = [
 			{
 				siteId: "youtube",
 				siteName: "Youtube",
-				previousMinutes: 0,
-				newMinutes: 30,
-				addedMinutes: 30,
+				previousSeconds: 0,
+				newSeconds: 30 * 60,
+				deltaSeconds: 30 * 60,
 			},
 			{
 				siteId: "tiktok",
 				siteName: "TikTok",
-				previousMinutes: 10,
-				newMinutes: 25,
-				addedMinutes: 15,
+				previousSeconds: 10 * 60,
+				newSeconds: 25 * 60,
+				deltaSeconds: 15 * 60,
 			},
 		],
 	},
@@ -38,9 +56,9 @@ export const INITIAL_UPDATE_LOGS: UpdateLogEntry[] = [
 			{
 				siteId: "instagram",
 				siteName: "Instagram",
-				previousMinutes: 5,
-				newMinutes: 20,
-				addedMinutes: 15,
+				previousSeconds: 5 * 60,
+				newSeconds: 20 * 60,
+				deltaSeconds: 15 * 60,
 			},
 		],
 	},
