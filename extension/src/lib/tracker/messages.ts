@@ -5,6 +5,7 @@ export const TRACKER_MESSAGE = {
 	GET_TAB_BLOCK_STATE: "GET_TAB_BLOCK_STATE",
 	BLOCK_SITE: "BLOCK_SITE",
 	UNBLOCK_SITE: "UNBLOCK_SITE",
+	OPEN_WEEKLY_TIMES: "OPEN_WEEKLY_TIMES",
 } as const;
 
 export interface TrackerRuntimeResponse {

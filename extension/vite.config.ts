@@ -44,6 +44,7 @@ export default defineConfig(({ mode }) => {
 			rollupOptions: {
 				input: {
 					popup: resolve(__dirname, "src/pages/popup/index.html"),
+					weekly: resolve(__dirname, "src/pages/weekly/index.html"),
 					content: resolve(__dirname, "src/pages/content/index.ts"),
 					background: resolve(__dirname, "src/pages/background/index.ts"),
 				},

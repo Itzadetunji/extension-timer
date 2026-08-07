@@ -23,6 +23,7 @@ import {
 	saveRuntimeState,
 	updatePersistedActiveSiteId,
 } from "@/lib/tracker/tracker-storage";
+import { recordWeeklyUsage } from "@/lib/tracker/weekly-usage";
 import type { SiteId, TrackedSite } from "@/types/tracker";
 
 let runtimeState = {
@@ -123,12 +124,23 @@ async function flushActiveTracking(now = Date.now()) {
 	const usedSecondsToday = normalized.limitConfigured
 		? Math.min(rawUsed, normalized.allowedSeconds)
 		: rawUsed;
+	const bankedSeconds = usedSecondsToday - normalized.usedSecondsToday;
 
 	await patchPersistedSiteUsage(siteId, {
 		usedSecondsToday,
 		usageDay: normalized.usageDay,
 		lastUpdatedAt: now,
 	});
+
+	if (bankedSeconds > 0) {
+		await recordWeeklyUsage({
+			siteId,
+			siteName: normalized.name,
+			seconds: bankedSeconds,
+			day: normalized.usageDay,
+			now: new Date(now),
+		});
+	}
 
 	return {
 		...normalized,
@@ -307,6 +319,28 @@ async function getTabBlockState(
 	};
 }
 
+const WEEKLY_PAGE_PATH = "src/pages/weekly/index.html";
+
+async function openWeeklyTimesPage() {
+	const url = chrome.runtime.getURL(WEEKLY_PAGE_PATH);
+	const tabs = await chrome.tabs.query({});
+	const existing = tabs.find(
+		(tab) => typeof tab.id === "number" && tab.url?.startsWith(url),
+	);
+
+	if (existing?.id) {
+		await chrome.tabs.update(existing.id, { active: true });
+
+		if (typeof existing.windowId === "number") {
+			await chrome.windows.update(existing.windowId, { focused: true });
+		}
+
+		return;
+	}
+
+	await chrome.tabs.create({ url });
+}
+
 async function bootstrap() {
 	await ensurePersistedTrackerState();
 	runtimeState = await loadRuntimeState();
@@ -381,6 +415,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	if (message?.type === TRACKER_MESSAGE.GET_TAB_BLOCK_STATE) {
 		const tabUrl = sender.tab?.url ?? message.url;
 		void getTabBlockState(tabUrl).then(sendResponse);
+		return true;
+	}
+
+	if (message?.type === TRACKER_MESSAGE.OPEN_WEEKLY_TIMES) {
+		void openWeeklyTimesPage().then(() => sendResponse({ ok: true }));
 		return true;
 	}
 

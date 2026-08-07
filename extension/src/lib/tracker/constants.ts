@@ -1,5 +1,6 @@
 export const TRACKER_STORE_KEY = "tracker-store";
 export const TRACKER_RUNTIME_KEY = "tracker-runtime";
+export const WEEKLY_USAGE_KEY = "weekly-usage";
 export const TRACKER_ALARM_NAME = "tracker-tick";
 /** Persist envelope version — must match zustand `persist({ version })`. */
 export const TRACKER_STORE_VERSION = 2;

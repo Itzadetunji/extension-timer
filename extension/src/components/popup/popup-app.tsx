@@ -12,6 +12,7 @@ import {
 	useLiveUsedSecondsToday,
 	useTrackerStorageSync,
 } from "@/lib/tracker/use-live-remaining";
+import { TRACKER_MESSAGE } from "@/lib/tracker/messages";
 import {
 	buildDraftAllowedSeconds,
 	selectPendingChanges,
@@ -56,6 +57,14 @@ export function PopupApp() {
 	const handleOpenUpdateFlow = () => {
 		setDraftAllowedSeconds(buildDraftAllowedSeconds(sites));
 		setScreen("update-times");
+	};
+
+	const handleSeeAllTimes = () => {
+		if (!chrome?.runtime?.sendMessage) {
+			return;
+		}
+
+		chrome.runtime.sendMessage({ type: TRACKER_MESSAGE.OPEN_WEEKLY_TIMES });
 	};
 
 	const handleAddSite = (url: string) => {
@@ -141,6 +150,7 @@ export function PopupApp() {
 					activeSiteId={activeSiteId}
 					usedSecondsBySiteId={usedSecondsBySiteId}
 					onUpdateTimes={handleOpenUpdateFlow}
+					onSeeAllTimes={handleSeeAllTimes}
 					onViewLogs={() => setScreen("update-logs")}
 				/>
 			)}

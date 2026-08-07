@@ -15,6 +15,7 @@ interface HomeScreenProps {
 	activeSiteId: SiteId;
 	usedSecondsBySiteId: Record<string, number>;
 	onUpdateTimes: () => void;
+	onSeeAllTimes: () => void;
 	onViewLogs: () => void;
 }
 
@@ -23,6 +24,7 @@ export function HomeScreen({
 	activeSiteId,
 	usedSecondsBySiteId,
 	onUpdateTimes,
+	onSeeAllTimes,
 	onViewLogs,
 }: HomeScreenProps) {
 	const activeSite = sites.find((site) => site.id === activeSiteId) ?? sites[0];
@@ -77,10 +79,18 @@ export function HomeScreen({
 					usedSecondsBySiteId={usedSecondsBySiteId}
 				/>
 
-				<div className="pt-2">
+				<div className="flex gap-2 pt-2">
 					<Button
 						type="button"
-						className="w-full"
+						variant="outline"
+						className="flex-1"
+						onClick={onSeeAllTimes}
+					>
+						See All Times
+					</Button>
+					<Button
+						type="button"
+						className="flex-1"
 						onClick={onUpdateTimes}
 					>
 						Update Times
