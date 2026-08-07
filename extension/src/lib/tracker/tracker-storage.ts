@@ -1,6 +1,12 @@
 import {
+	ACTIVE_SITE_ID,
+	INITIAL_SITES,
+	INITIAL_UPDATE_LOGS,
+} from "@/lib/mock-data";
+import {
 	TRACKER_RUNTIME_KEY,
 	TRACKER_STORE_KEY,
+	TRACKER_STORE_VERSION,
 } from "@/lib/tracker/constants";
 import { formatUsageDay } from "@/lib/tracker/site-usage";
 import {
@@ -18,6 +24,24 @@ import type {
 interface PersistedStoreEnvelope {
 	state: PersistedTrackerState;
 	version: number;
+}
+
+type SiteUsagePatch = {
+	usedSecondsToday: number;
+	usageDay?: string;
+	lastUpdatedAt?: number;
+};
+
+/** Serialize read-modify-write updates so popup limit saves aren't overwritten. */
+let trackerStoreWriteChain: Promise<unknown> = Promise.resolve();
+
+function withTrackerStoreLock<T>(fn: () => Promise<T>): Promise<T> {
+	const run = trackerStoreWriteChain.then(fn, fn);
+	trackerStoreWriteChain = run.then(
+		() => undefined,
+		() => undefined,
+	);
+	return run;
 }
 
 function migrateSite(
@@ -155,6 +179,14 @@ function parsePersistedStore(raw: string | null): PersistedTrackerState | null {
 	}
 }
 
+function defaultPersistedTrackerState(): PersistedTrackerState {
+	return {
+		sites: INITIAL_SITES,
+		updateLogs: INITIAL_UPDATE_LOGS,
+		activeSiteId: ACTIVE_SITE_ID,
+	};
+}
+
 export async function loadPersistedTrackerState(): Promise<PersistedTrackerState | null> {
 	if (typeof chrome === "undefined" || !chrome.storage?.local?.get) {
 		return null;
@@ -173,7 +205,7 @@ export async function savePersistedTrackerState(
 
 	const envelope: PersistedStoreEnvelope = {
 		state,
-		version: 0,
+		version: TRACKER_STORE_VERSION,
 	};
 
 	await chrome.storage.local.set({
@@ -181,37 +213,76 @@ export async function savePersistedTrackerState(
 	});
 }
 
-export async function updatePersistedActiveSiteId(
-	activeSiteId: SiteId,
-): Promise<void> {
-	const current = await loadPersistedTrackerState();
+/** Load tracker-store, or create it when missing. */
+export async function ensurePersistedTrackerState(): Promise<PersistedTrackerState> {
+	return withTrackerStoreLock(async () => {
+		const existing = await loadPersistedTrackerState();
 
-	if (!current || current.activeSiteId === activeSiteId) {
-		return;
-	}
+		if (existing) {
+			return existing;
+		}
 
-	await savePersistedTrackerState({
-		...current,
-		activeSiteId,
+		const created = defaultPersistedTrackerState();
+		await savePersistedTrackerState(created);
+		return created;
 	});
 }
 
-export async function updatePersistedSites(
-	sites: TrackedSite[],
+export async function updatePersistedActiveSiteId(
+	activeSiteId: SiteId,
+): Promise<void> {
+	await withTrackerStoreLock(async () => {
+		const current = await loadPersistedTrackerState();
+
+		if (!current || current.activeSiteId === activeSiteId) {
+			return;
+		}
+
+		await savePersistedTrackerState({
+			...current,
+			activeSiteId,
+		});
+	});
+}
+
+/**
+ * Patch usage fields only — never rewrite allowedSeconds / logs from a stale snapshot.
+ * This is what made Update Times appear to save (Done dialog) then get overwritten.
+ */
+export async function patchPersistedSiteUsage(
+	siteId: SiteId,
+	patch: SiteUsagePatch,
 ): Promise<PersistedTrackerState | null> {
-	const current = await loadPersistedTrackerState();
+	return withTrackerStoreLock(async () => {
+		const current = await loadPersistedTrackerState();
 
-	if (!current) {
-		return null;
-	}
+		if (!current) {
+			return null;
+		}
 
-	const nextState = {
-		...current,
-		sites,
-	};
+		const siteIndex = current.sites.findIndex((site) => site.id === siteId);
 
-	await savePersistedTrackerState(nextState);
-	return nextState;
+		if (siteIndex === -1) {
+			return current;
+		}
+
+		const site = current.sites[siteIndex];
+		const nextSites = [...current.sites];
+		nextSites[siteIndex] = {
+			...site,
+			usedSecondsToday: patch.usedSecondsToday,
+			usageDay: patch.usageDay ?? site.usageDay,
+			lastUpdatedAt: patch.lastUpdatedAt ?? Date.now(),
+		};
+
+		const nextState = {
+			...current,
+			sites: nextSites,
+		};
+
+		await savePersistedTrackerState(nextState);
+		return nextState;
+	});
 }
 
 export async function loadRuntimeState(): Promise<TrackerRuntimeState> {

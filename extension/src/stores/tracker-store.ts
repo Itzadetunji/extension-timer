@@ -12,6 +12,10 @@ import {
 } from "@/lib/sites/resolve-site-from-url";
 import { createExtensionStorage } from "@/lib/storage/create-extension-storage";
 import { formatUsageDay } from "@/lib/tracker/site-usage";
+import {
+	TRACKER_STORE_KEY,
+	TRACKER_STORE_VERSION,
+} from "@/lib/tracker/constants";
 import { migratePersistedState } from "@/lib/tracker/tracker-storage";
 import type {
 	SiteId,
@@ -19,8 +23,6 @@ import type {
 	TrackedSite,
 	UpdateLogEntry,
 } from "@/types/tracker";
-
-const STORAGE_KEY = "tracker-store";
 
 interface PersistedTrackerState {
 	sites: TrackedSite[];
@@ -165,7 +167,7 @@ export const useTrackerStore = create<TrackerStore>()(
 				}),
 		}),
 		{
-			name: STORAGE_KEY,
+			name: TRACKER_STORE_KEY,
 			storage: createJSONStorage(() => createExtensionStorage()),
 			partialize: (state) => ({
 				sites: state.sites,
@@ -195,7 +197,7 @@ export const useTrackerStore = create<TrackerStore>()(
 						>;
 					},
 				),
-			version: 2,
+			version: TRACKER_STORE_VERSION,
 		},
 	),
 );
@@ -204,9 +206,9 @@ useTrackerStore.persist.onFinishHydration(() => {
 	useTrackerStore.setState({ hasHydrated: true });
 });
 
-useTrackerStore.persist.onHydrate(() => {
-	useTrackerStore.setState({ hasHydrated: false });
-});
+// Keep hasHydrated true across later rehydrates (e.g. storage sync after
+// time updates). Flipping it false remounts the popup into "Loading tracker..."
+// and causes flicker whenever the background writes tracker-store.
 
 if (useTrackerStore.persist.hasHydrated()) {
 	useTrackerStore.setState({ hasHydrated: true });
