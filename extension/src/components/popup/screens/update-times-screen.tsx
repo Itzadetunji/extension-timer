@@ -46,8 +46,7 @@ export function UpdateTimesScreen({
 
 	useEffect(() => {
 		form.setFieldValue("draftAllowedSeconds", draftAllowedSeconds, {
-
-			dontUpdateMeta: true
+			dontUpdateMeta: true,
 		});
 	}, [draftAllowedSeconds, form]);
 
@@ -65,12 +64,7 @@ export function UpdateTimesScreen({
 				showBack
 				onBack={onBack}
 				action={
-					<Button
-						type="button"
-						variant="outline"
-						size="xs"
-						onClick={onAddSite}
-					>
+					<Button type="button" variant="outline" size="xs" onClick={onAddSite}>
 						Add
 					</Button>
 				}
@@ -104,7 +98,8 @@ export function UpdateTimesScreen({
 									)}
 									onChange={(event) => {
 										const minutes = Number.parseInt(event.target.value, 10);
-										const nextSeconds = (Number.isNaN(minutes) ? 0 : minutes) * 60;
+										const nextSeconds =
+											(Number.isNaN(minutes) ? 0 : minutes) * 60;
 										onDraftChange(site.id, nextSeconds);
 										form.setFieldValue("draftAllowedSeconds", {
 											...form.state.values.draftAllowedSeconds,

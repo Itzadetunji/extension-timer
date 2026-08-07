@@ -40,3 +40,20 @@ export function formatLogSummary(totalDelta: number) {
 
 	return formatDeltaSeconds(totalDelta);
 }
+
+/** e.g. "2h 15m", "45m", "0m" */
+export function formatHoursAndMinutes(totalSeconds: number) {
+	const seconds = Math.max(0, Math.floor(totalSeconds));
+	const hours = Math.floor(seconds / 3600);
+	const minutes = Math.floor((seconds % 3600) / 60);
+
+	if (hours > 0 && minutes > 0) {
+		return `${hours}h ${minutes}m`;
+	}
+
+	if (hours > 0) {
+		return `${hours}h`;
+	}
+
+	return `${minutes}m`;
+}

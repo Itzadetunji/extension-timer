@@ -18,7 +18,7 @@ export function SiteTimeRow({
 	usedSecondsToday,
 	highlight = false,
 }: SiteTimeRowProps) {
-	console.log(site)
+	console.log(site);
 	return (
 		<div
 			className={
@@ -32,7 +32,8 @@ export function SiteTimeRow({
 				<span className="truncate text-sm font-medium">{site.name}</span>
 			</div>
 			<span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-				{formatRemainingSeconds(usedSecondsToday)} / {formatRemainingSeconds(site.allowedSeconds)}
+				{formatRemainingSeconds(usedSecondsToday)} /{" "}
+				{formatRemainingSeconds(site.allowedSeconds)}
 			</span>
 		</div>
 	);

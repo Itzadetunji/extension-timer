@@ -53,10 +53,7 @@ export function HomeScreen({
 				</p>
 				{activeSite ? (
 					<div className="flex items-center gap-2.5">
-						<SiteIcon
-							siteId={activeSite.id}
-							size="lg"
-						/>
+						<SiteIcon siteId={activeSite.id} size="lg" />
 						<span className="text-sm font-medium">{activeSite.name}</span>
 					</div>
 				) : (
@@ -74,30 +71,25 @@ export function HomeScreen({
 			</section>
 
 			<div className="flex flex-col flex-1 gap-1 justify-between">
-				<SiteTimeList
-					sites={sites}
-					usedSecondsBySiteId={usedSecondsBySiteId}
-				/>
+				<SiteTimeList sites={sites} usedSecondsBySiteId={usedSecondsBySiteId} />
 
-				<div className="flex gap-2 pt-2">
-					<Button
-						type="button"
-						variant="outline"
-						className="flex-1"
-						onClick={onSeeAllTimes}
-					>
-						See All Times
-					</Button>
-					<Button
-						type="button"
-						className="flex-1"
-						onClick={onUpdateTimes}
-					>
-						Update Times
-					</Button>
+				<div className="flex flex-col gap-2">
+					<div className="flex gap-2 pt-2">
+						<Button
+							type="button"
+							variant="outline"
+							className="flex-1"
+							onClick={onSeeAllTimes}
+						>
+							See All Times
+						</Button>
+						<Button type="button" className="flex-1" onClick={onUpdateTimes}>
+							Update Times
+						</Button>
+					</div>
+
+					<MadeWith />
 				</div>
-
-				<MadeWith />
 			</div>
 		</div>
 	);

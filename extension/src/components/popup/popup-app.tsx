@@ -105,8 +105,13 @@ export function PopupApp() {
 		setSiteIdPendingDelete(null);
 	};
 
-	const handleSubmitUpdate = (nextDraftAllowedSeconds: Record<string, number>) => {
-		const nextPendingChanges = selectPendingChanges(sites, nextDraftAllowedSeconds);
+	const handleSubmitUpdate = (
+		nextDraftAllowedSeconds: Record<string, number>,
+	) => {
+		const nextPendingChanges = selectPendingChanges(
+			sites,
+			nextDraftAllowedSeconds,
+		);
 
 		if (nextPendingChanges.length === 0) {
 			setDoneMessage(
@@ -168,10 +173,7 @@ export function PopupApp() {
 			)}
 
 			{screen === "update-logs" && (
-				<UpdateLogsScreen
-					logs={updateLogs}
-					onBack={() => setScreen("home")}
-				/>
+				<UpdateLogsScreen logs={updateLogs} onBack={() => setScreen("home")} />
 			)}
 
 			<AddSiteDialog

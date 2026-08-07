@@ -21,10 +21,7 @@ export function DeleteSiteDialog({
 	onDelete,
 }: DeleteSiteDialogProps) {
 	return (
-		<Dialog
-			open={open}
-			onOpenChange={onOpenChange}
-		>
+		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-sm">
 				<DialogHeader>
 					<DialogTitle>Delete Website</DialogTitle>
