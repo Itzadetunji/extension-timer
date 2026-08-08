@@ -2,7 +2,7 @@
 	"manifest_version": 3,
 	"name": "Screen Time Blocker",
 	"version": "1.0.0",
-	"description": "A Chrome extension built with React, Vite, TypeScript, and Bun.",
+	"description": "Web Extension Timer is as simple as the name is, it is used to track your time on the web and block you when necessary.",
 	"icons": {
 		"16": "icons/icon16.png",
 		"48": "icons/icon48.png",
