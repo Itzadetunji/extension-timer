@@ -7,6 +7,7 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const isUiDev = process.env.UI_DEV === "true";
+const isStoreLanding = process.env.STORE_LANDING === "true";
 
 export default defineConfig(({ mode }) => {
 	return {
@@ -37,7 +38,9 @@ export default defineConfig(({ mode }) => {
 		].filter(Boolean),
 		server: isUiDev
 			? {
-					open: "/src/pages/popup/index.html",
+					open: isStoreLanding
+						? "/src/pages/store-landing/index.html"
+						: "/src/pages/popup/index.html",
 				}
 			: undefined,
 		build: {
