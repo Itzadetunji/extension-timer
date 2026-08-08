@@ -116,22 +116,11 @@ export function WeeklyTimesScreen({
 
 	return (
 		<div className="flex min-h-full flex-col gap-6">
-			{/* <PopupHeader
+			<PopupHeader
 				subtitle="This Week"
 				showBack
 				onBack={onBack}
-				action={
-					<Button
-						type="button"
-						variant="outline"
-						size="xs"
-						onClick={handleFillMockData}
-						disabled={sites.length === 0 || isSeedingMock}
-					>
-						{isSeedingMock ? "Filling..." : "Fill mock data"}
-					</Button>
-				}
-			/> */}
+			/>
 
 			{!hasLoaded ? (
 				<p className="py-8 text-center text-sm text-muted-foreground">
