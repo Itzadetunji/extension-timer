@@ -22,7 +22,7 @@ const SITE_ROWS: {
 
 function PopupMock() {
 	return (
-		<div className="popup-root pointer-events-none w-[380px] min-h-[520px] shadow-[0_0_0_1px_oklch(1_0_0_/_0.08),0_32px_80px_-24px_rgba(0,0,0,0.55)]">
+		<div className="popup-root w-95 min-h-130 shadow-[0_0_0_1px_oklch(1_0_0/0.08),0_32px_80px_-24px_rgba(0,0,0,0.55)]">
 			<div className="flex min-h-full flex-1 flex-col justify-between gap-6">
 				<header className="flex items-start justify-between gap-3">
 					<h2 className="font-heading text-base font-semibold tracking-wider uppercase">
@@ -102,7 +102,7 @@ function StoreLanding() {
 				{/* Soft warm lift — same hue as the extension, just a touch lighter in the center */}
 				<div
 					aria-hidden
-					className="pointer-events-none absolute inset-0"
+					className="absolute inset-0"
 					style={{
 						background:
 							"radial-gradient(ellipse 55% 70% at 22% 50%, oklch(0.28 0.012 43.1 / 0.9), transparent 70%), radial-gradient(ellipse 45% 60% at 78% 45%, oklch(0.26 0.01 43.1 / 0.7), transparent 65%)",
@@ -112,7 +112,7 @@ function StoreLanding() {
 				{/* Subtle Linear-style grid in warm white */}
 				<div
 					aria-hidden
-					className="pointer-events-none absolute inset-0 opacity-[0.04]"
+					className="absolute inset-0 opacity-[0.04]"
 					style={{
 						backgroundImage:
 							"linear-gradient(oklch(0.986 0.002 67.8) 1px, transparent 1px), linear-gradient(90deg, oklch(0.986 0.002 67.8) 1px, transparent 1px)",
@@ -151,13 +151,21 @@ function StoreLanding() {
 							</p>
 						</div>
 
-						<div className="flex items-center gap-3 pt-1">
-							<Button type="button" size="lg" tabIndex={-1}>
-								Add to Chrome
-							</Button>
-							<span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-								Free · Privacy-first
-							</span>
+						<div className="flex flex-col gap-4 pt-1">
+							<div className="flex items-center gap-3">
+								<Button type="button" size="lg" tabIndex={-1}>
+									Add to Chrome
+								</Button>
+								<span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+									Free · Privacy-first
+								</span>
+							</div>
+							<a
+								href="/privacy"
+								className="w-fit text-xs font-semibold tracking-widest text-muted-foreground uppercase transition-colors hover:text-foreground"
+							>
+								Privacy Policy →
+							</a>
 						</div>
 					</div>
 

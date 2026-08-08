@@ -1,0 +1,16 @@
+{
+	"buildCommand": "bun run build:web",
+	"outputDirectory": "web-dist",
+	"framework": null,
+	"cleanUrls": true,
+	"rewrites": [
+		{
+			"source": "/privacy",
+			"destination": "/privacy/index.html"
+		},
+		{
+			"source": "/privacy/",
+			"destination": "/privacy/index.html"
+		}
+	]
+}

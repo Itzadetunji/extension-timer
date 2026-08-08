@@ -7,8 +7,11 @@
 		"dev": "vite",
 		"dev:ui": "UI_DEV=true vite",
 		"dev:store": "STORE_LANDING=true UI_DEV=true vite",
+		"dev:web": "vite --config vite.web.config.ts",
 		"build": "tsc -b && NODE_ENV=development vite build --watch ",
+		"build:web": "vite build --config vite.web.config.ts",
 		"preview": "vite preview",
+		"preview:web": "vite preview --config vite.web.config.ts",
 		"format": "biome format --write",
 		"lint": "biome lint --unsafe",
 		"check": "biome check"

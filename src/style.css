@@ -5,6 +5,10 @@
 @import "@fontsource/space-mono/400.css";
 @import "@fontsource/space-mono/700.css";
 
+/* Ensure utilities are generated when Vite root is `web/` (Vercel site build). */
+@source "./**/*.{ts,tsx}";
+@source "../web/**/*.html";
+
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
