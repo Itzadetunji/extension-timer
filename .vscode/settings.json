@@ -26,5 +26,8 @@
 	"[css]": {
 		"editor.defaultFormatter": "biomejs.biome"
 	},
-	"biome.lspBin": "${workspaceFolder}/extension/node_modules/@biomejs/biome/bin/biome"
+	"biome.lspBin": "${workspaceFolder}/extension/node_modules/@biomejs/biome/bin/biome",
+	"[html]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	}
 }
