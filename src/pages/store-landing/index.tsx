@@ -3,9 +3,13 @@ import "@/style.css";
 import { createRoot } from "react-dom/client";
 import { MadeWith } from "@/components/popup/shared/made-with";
 import { SiteIcon } from "@/components/popup/shared/site-icon";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import type { KnownSiteId } from "@/types/tracker";
+
+const CHROME_STORE_URL =
+	"https://chromewebstore.google.com/detail/empty-title/pdfgjepmobokmkfophlihgklenlkniml?utm_source=item-share-cb";
 
 const SITE_ROWS: {
 	id: KnownSiteId;
@@ -153,9 +157,14 @@ function StoreLanding() {
 
 						<div className="flex flex-col gap-4 pt-1">
 							<div className="flex items-center gap-3">
-								<Button type="button" size="lg" tabIndex={-1}>
+								<a
+									href={CHROME_STORE_URL}
+									target="_blank"
+									rel="noreferrer"
+									className={cn(buttonVariants({ size: "lg" }))}
+								>
 									Add to Chrome
-								</Button>
+								</a>
 								<span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 									Free · Privacy-first
 								</span>
